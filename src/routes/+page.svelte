@@ -10,16 +10,23 @@
   let selectedTag = $state('all');
   let selectedStatus = $state<'all' | SongStatus>('all');
 
+  const coverImage =
+    'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1740&auto=format&fit=crop';
+  const fieldClass =
+    'w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-teal-400 focus:ring-4 focus:ring-teal-100';
+  const selectClass =
+    'w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-teal-400 focus:ring-4 focus:ring-teal-100';
+
   const normalize = (value: string) => value.trim().toLowerCase();
 
   const statusClass = (status: SongStatus) => {
     switch (status) {
       case 'ready':
-        return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-100';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
       case 'learning':
-        return 'border-amber-400/20 bg-amber-400/10 text-amber-100';
+        return 'border-amber-200 bg-amber-50 text-amber-700';
       case 'resting':
-        return 'border-slate-300/10 bg-slate-300/10 text-slate-200';
+        return 'border-slate-200 bg-slate-100 text-slate-600';
     }
   };
 
@@ -49,147 +56,172 @@
 </svelte:head>
 
 <div class="space-y-8 lg:space-y-10">
-  <section class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-stretch">
-    <div class="overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-slate-950/35 lg:p-8">
-      <div class="flex flex-wrap items-center gap-3">
-        <span class={`inline-flex rounded-full bg-gradient-to-r px-4 py-1 text-sm font-semibold text-slate-950 ${data.catalog.streamer.accent}`}>
-          {data.catalog.streamer.name}
-        </span>
-        <span class="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-          {data.catalog.stats.publicSongs} 首公开曲目
-        </span>
-        <span class="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-          {data.catalog.stats.pendingRequests} 条待处理愿望
-        </span>
-        {#if data.catalog.backendMode === 'memory'}
-          <span class="rounded-full border border-fuchsia-400/30 bg-fuchsia-400/10 px-3 py-1 text-xs text-fuchsia-100">
-            当前使用内存演示数据
-          </span>
-        {/if}
-      </div>
+  <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_460px]">
+    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+      <div class="relative h-full min-h-[280px] lg:min-h-[360px]">
+        <img
+          src={coverImage}
+          alt="舞台麦克风和灯光"
+          class="absolute inset-0 h-full w-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/40"></div>
 
-      <div class="mt-5 max-w-3xl space-y-4">
-        <h1 class="text-3xl font-semibold tracking-tight text-white lg:text-5xl">
-          双端可用、桌面端优先优化的 VTuber 歌单站
-        </h1>
-        <p class="text-sm leading-7 text-slate-300 lg:text-base">
-          观众可以快速搜索主播会唱的歌，按语言、标签、状态筛选；桌面端优先强调信息密度和浏览效率，移动端则保证直播场景下也能顺畅查歌与提交愿望单。
-        </p>
-      </div>
+        <div class="relative flex h-full min-h-[280px] flex-col justify-between p-6 lg:min-h-[360px] lg:p-10">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class={`inline-flex rounded-full bg-gradient-to-r px-4 py-1 text-sm font-semibold text-slate-950 ${data.catalog.streamer.accent}`}>
+              {data.catalog.streamer.name}
+            </span>
+            <span class="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs text-slate-600">
+              {data.catalog.stats.publicSongs} 首公开曲目
+            </span>
+            <span class="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-xs text-slate-600">
+              {data.catalog.stats.pendingRequests} 条待处理愿望
+            </span>
+            {#if data.catalog.backendMode === 'memory'}
+              <span class="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs text-rose-700">
+                内存演示数据
+              </span>
+            {/if}
+          </div>
 
-      <div class="mt-8 grid gap-3 sm:grid-cols-3">
-        {#each data.catalog.streamer.platforms as platform}
-          <a
-            href={platform.href}
-            target="_blank"
-            rel="noreferrer"
-            class="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3 text-sm font-medium text-slate-200 transition hover:border-sky-400/40 hover:bg-slate-900/80 hover:text-white"
-          >
-            进入 {platform.label}
-          </a>
-        {/each}
+          <div class="max-w-3xl space-y-4">
+            <h1 class="text-3xl font-semibold tracking-tight text-slate-950 lg:text-5xl">
+              Airi 的直播歌单
+            </h1>
+            <p class="max-w-2xl text-sm leading-7 text-slate-700 lg:text-base">
+              搜索会唱的歌，按语言、标签和状态快速筛选；想听的新歌也可以直接留在愿望单里。
+            </p>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3">
+            {#each data.catalog.streamer.platforms as platform}
+              <a
+                href={platform.href}
+                target="_blank"
+                rel="noreferrer"
+                class="rounded-[18px] border border-slate-200 bg-white/90 px-4 py-3 text-sm font-medium text-slate-800 shadow-sm transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
+              >
+                前往 {platform.label}
+              </a>
+            {/each}
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="rounded-[28px] border border-white/10 bg-slate-950/50 p-6 lg:p-7">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-sm font-medium text-sky-200">愿望单提交</p>
-          <h2 class="mt-1 text-2xl font-semibold text-white">让主播知道你想听什么</h2>
-        </div>
-        <div class="hidden rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 lg:block">
-          公开提交，无需登录
+    <div class="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-100 bg-gradient-to-br from-teal-50 via-white to-rose-50 px-6 py-6 lg:px-7">
+        <div class="flex flex-col gap-4">
+          <span class="w-fit rounded-full border border-lime-200 bg-lime-50 px-3 py-1 text-xs font-medium text-lime-800">
+            无需登录
+          </span>
+
+          <div>
+            <p class="text-sm font-medium text-teal-700">愿望单提交</p>
+            <h2 class="mt-2 text-2xl font-semibold leading-tight text-slate-950">
+              想听哪首歌？
+            </h2>
+            <p class="mt-3 text-sm leading-6 text-slate-600">
+              写下歌名、原唱和一点想法，主播之后会在后台统一处理。
+            </p>
+          </div>
         </div>
       </div>
 
-      {#if form?.requestMessage}
-        <div class="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-          {form.requestMessage}
-        </div>
-      {/if}
+      <div class="p-6 lg:p-7">
+        {#if form?.requestMessage || form?.requestError}
+          <div class="space-y-3">
+            {#if form?.requestMessage}
+              <div class="rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                {form.requestMessage}
+              </div>
+            {/if}
 
-      {#if form?.requestError}
-        <div class="mt-5 rounded-2xl border border-rose-400/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-          {form.requestError}
-        </div>
-      {/if}
+            {#if form?.requestError}
+              <div class="rounded-[20px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {form.requestError}
+              </div>
+            {/if}
+          </div>
+        {/if}
 
-      <form method="POST" class="mt-5 space-y-4">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 text-sm text-slate-300">
+        <form method="POST" class={`grid gap-5 ${form?.requestMessage || form?.requestError ? 'mt-5' : ''}`}>
+          <label class="block space-y-2 text-sm text-slate-700">
             <span>歌曲名</span>
             <input
               name="songTitle"
               value={form?.requestValues?.songTitle ?? ''}
-              class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:bg-white/8"
+              class={fieldClass}
               placeholder="例如：群青"
             />
           </label>
 
-          <label class="space-y-2 text-sm text-slate-300">
+          <label class="block space-y-2 text-sm text-slate-700">
             <span>原唱</span>
             <input
               name="artist"
               value={form?.requestValues?.artist ?? ''}
-              class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:bg-white/8"
+              class={fieldClass}
               placeholder="例如：YOASOBI"
             />
           </label>
-        </div>
 
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>留言</span>
-          <textarea name="message" rows="4" class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:bg-white/8" placeholder="可以说说为什么想听、适合什么场合唱。">{form?.requestValues?.message ?? ''}</textarea>
-        </label>
+          <label class="block space-y-2 text-sm text-slate-700">
+            <span>留言</span>
+            <textarea
+              name="message"
+              rows="5"
+              class={fieldClass}
+              placeholder="可以说说为什么想听、适合什么场合唱。"
+            >{form?.requestValues?.message ?? ''}</textarea>
+          </label>
 
-        <label class="space-y-2 text-sm text-slate-300">
-          <span>你的昵称（可选）</span>
-          <input
-            name="requesterName"
-            value={form?.requestValues?.requesterName ?? ''}
-            class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:bg-white/8"
-            placeholder="例如：夜猫子"
-          />
-        </label>
+          <label class="block space-y-2 text-sm text-slate-700">
+            <span>你的昵称（可选）</span>
+            <input
+              name="requesterName"
+              value={form?.requestValues?.requesterName ?? ''}
+              class={fieldClass}
+              placeholder="例如：夜猫子"
+            />
+          </label>
 
-        <button
-          type="submit"
-          class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-fuchsia-500 via-sky-400 to-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:brightness-110"
-        >
-          提交愿望单
-        </button>
-      </form>
+          <button
+            type="submit"
+            class="mt-1 inline-flex w-full items-center justify-center rounded-[18px] bg-gradient-to-r from-teal-400 via-lime-300 to-rose-300 px-5 py-3.5 text-sm font-semibold text-slate-950 shadow-sm transition hover:brightness-105"
+          >
+            提交愿望单
+          </button>
+        </form>
+      </div>
     </div>
   </section>
 
   <section class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-    <aside class="h-fit rounded-[28px] border border-white/10 bg-slate-950/50 p-5 lg:sticky lg:top-24">
+    <aside class="h-fit rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <p class="text-sm font-medium text-sky-200">公开歌单</p>
-          <h2 class="mt-1 text-2xl font-semibold text-white">搜索与筛选</h2>
+          <p class="text-sm font-medium text-teal-700">公开歌单</p>
+          <h2 class="mt-1 text-2xl font-semibold text-slate-950">搜索与筛选</h2>
         </div>
-        <span class="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-400">
+        <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
           {filteredSongs.length} / {data.catalog.songs.length}
         </span>
       </div>
 
       <div class="mt-5 space-y-4">
-        <label class="block space-y-2 text-sm text-slate-300">
+        <label class="block space-y-2 text-sm text-slate-700">
           <span>搜索</span>
           <input
             bind:value={query}
-            class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50 focus:bg-white/8"
+            class={fieldClass}
             placeholder="按歌名、原唱、标签搜索"
           />
         </label>
 
-        <label class="block space-y-2 text-sm text-slate-300">
+        <label class="block space-y-2 text-sm text-slate-700">
           <span>语言</span>
-          <select
-            bind:value={selectedLanguage}
-            class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-sky-400/50"
-          >
+          <select bind:value={selectedLanguage} class={selectClass}>
             <option value="all">全部语言</option>
             {#each data.catalog.languages as language}
               <option value={language}>{language}</option>
@@ -197,12 +229,9 @@
           </select>
         </label>
 
-        <label class="block space-y-2 text-sm text-slate-300">
+        <label class="block space-y-2 text-sm text-slate-700">
           <span>标签</span>
-          <select
-            bind:value={selectedTag}
-            class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-sky-400/50"
-          >
+          <select bind:value={selectedTag} class={selectClass}>
             <option value="all">全部标签</option>
             {#each data.catalog.tags as tag}
               <option value={tag}>{tag}</option>
@@ -210,12 +239,9 @@
           </select>
         </label>
 
-        <label class="block space-y-2 text-sm text-slate-300">
+        <label class="block space-y-2 text-sm text-slate-700">
           <span>当前状态</span>
-          <select
-            bind:value={selectedStatus}
-            class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-sky-400/50"
-          >
+          <select bind:value={selectedStatus} class={selectClass}>
             <option value="all">全部状态</option>
             {#each data.catalog.statuses as status}
               <option value={status}>{songStatusLabels[status]}</option>
@@ -226,8 +252,8 @@
     </aside>
 
     <div class="space-y-4">
-      <div class="hidden overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/55 lg:block">
-        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 border-b border-white/10 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+      <div class="hidden overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm lg:block">
+        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           <div>歌曲名</div>
           <div>原唱</div>
           <div>语言</div>
@@ -237,12 +263,12 @@
 
         {#if filteredSongs.length > 0}
           {#each filteredSongs as song, index}
-            <div class={`grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 px-6 py-5 ${index !== filteredSongs.length - 1 ? 'border-b border-white/8' : ''}`}>
+            <div class={`grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 px-6 py-5 ${index !== filteredSongs.length - 1 ? 'border-b border-slate-100' : ''}`}>
               <div>
-                <p class="text-base font-semibold text-white">{song.title}</p>
+                <p class="text-base font-semibold text-slate-950">{song.title}</p>
               </div>
-              <div class="text-sm text-slate-200">{song.artist}</div>
-              <div class="text-sm text-slate-300">{song.language}</div>
+              <div class="text-sm text-slate-700">{song.artist}</div>
+              <div class="text-sm text-slate-600">{song.language}</div>
               <div>
                 <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(song.status)}`}>
                   {songStatusLabels[song.status]}
@@ -250,7 +276,7 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 {#each song.tags as tag}
-                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                  <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
                     {tag}
                   </span>
                 {/each}
@@ -258,7 +284,7 @@
             </div>
           {/each}
         {:else}
-          <div class="px-6 py-16 text-center text-sm text-slate-400">
+          <div class="px-6 py-16 text-center text-sm text-slate-500">
             当前筛选下没有结果，试试放宽关键词或筛选项。
           </div>
         {/if}
@@ -267,27 +293,27 @@
       <div class="grid gap-4 lg:hidden">
         {#if filteredSongs.length > 0}
           {#each filteredSongs as song}
-            <article class="rounded-[24px] border border-white/10 bg-slate-950/55 p-5">
+            <article class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
               <div class="flex items-start justify-between gap-4">
-                <div>
-                  <h3 class="text-lg font-semibold text-white">{song.title}</h3>
-                  <p class="mt-1 text-sm text-slate-300">{song.artist}</p>
+                <div class="min-w-0">
+                  <h3 class="break-words text-lg font-semibold text-slate-950">{song.title}</h3>
+                  <p class="mt-1 text-sm text-slate-600">{song.artist}</p>
                 </div>
-                <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(song.status)}`}>
+                <span class={`inline-flex shrink-0 rounded-full border px-3 py-1 text-xs font-medium ${statusClass(song.status)}`}>
                   {songStatusLabels[song.status]}
                 </span>
               </div>
 
-              <div class="mt-4 grid gap-3 text-sm text-slate-300 sm:grid-cols-2">
+              <div class="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                 <div>
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">语言</p>
+                  <p class="text-xs uppercase tracking-[0.14em] text-slate-500">语言</p>
                   <p class="mt-1">{song.language}</p>
                 </div>
                 <div>
-                  <p class="text-xs uppercase tracking-[0.18em] text-slate-500">标签</p>
+                  <p class="text-xs uppercase tracking-[0.14em] text-slate-500">标签</p>
                   <div class="mt-2 flex flex-wrap gap-2">
                     {#each song.tags as tag}
-                      <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                      <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
                         {tag}
                       </span>
                     {/each}
@@ -297,7 +323,7 @@
             </article>
           {/each}
         {:else}
-          <div class="rounded-[24px] border border-dashed border-white/10 bg-slate-950/35 px-4 py-12 text-center text-sm text-slate-400">
+          <div class="rounded-[24px] border border-dashed border-slate-300 bg-white/80 px-4 py-12 text-center text-sm text-slate-500">
             当前筛选下没有歌曲。
           </div>
         {/if}

@@ -17,22 +17,22 @@
 </svelte:head>
 
 <div class="min-h-screen">
-  <header class="sticky top-0 z-20 border-b border-white/10 bg-slate-950/72 backdrop-blur-xl">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 lg:px-6">
-      <a href="/" class="flex items-center gap-3 text-sm font-medium text-slate-100">
-        <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500 via-sky-400 to-cyan-300 text-base font-semibold text-slate-950">
+  <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 shadow-sm backdrop-blur-xl">
+    <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+      <a href="/" class="flex min-w-0 items-center gap-3 text-sm font-medium text-slate-900">
+        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-teal-400 via-lime-300 to-rose-300 text-base font-semibold text-slate-950 shadow-sm">
           歌
         </span>
-        <span class="flex flex-col">
+        <span class="flex min-w-0 flex-col">
           <span class="text-base font-semibold">VTuber Songboard</span>
-          <span class="text-xs text-slate-400">单主播歌单与愿望单管理</span>
+          <span class="text-xs text-slate-500">单主播歌单与愿望单管理</span>
         </span>
       </a>
 
-      <nav class="flex items-center gap-2 text-sm text-slate-300">
+      <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-600">
         <a
           href="/"
-          class="rounded-full border border-white/10 px-4 py-2 transition hover:border-sky-400/40 hover:bg-white/5 hover:text-white"
+          class="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800"
         >
           公开歌单
         </a>
@@ -40,14 +40,14 @@
         {#if data.viewer.isAdmin}
           <a
             href="/admin"
-            class="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sky-100 transition hover:bg-sky-400/20"
+            class="rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-teal-800 transition hover:border-teal-300 hover:bg-teal-100"
           >
             后台管理
           </a>
         {:else}
           <a
             href="/admin/login"
-            class="rounded-full border border-white/10 px-4 py-2 transition hover:border-fuchsia-400/40 hover:bg-white/5 hover:text-white"
+            class="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800"
           >
             管理员登录
           </a>
