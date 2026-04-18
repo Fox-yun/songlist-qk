@@ -8,11 +8,23 @@ import type { Cookies } from '@sveltejs/kit';
 const sessionCookieName = 'songboard_admin_session';
 const defaultAdminEmail = 'admin@example.com';
 const defaultAdminPassword = 'demo-admin';
+const sessionMaxAgeSeconds = 60 * 60 * 24 * 7;
 
 type AuthMode = 'demo' | 'supabase';
 
-const signValue = (value: string) =>
-  createHmac('sha256', privateEnv.AUTH_SECRET || 'songboard-local-secret').update(value).digest('hex');
+const getAuthSecret = () => {
+  if (!privateEnv.AUTH_SECRET || privateEnv.AUTH_SECRET === 'replace-me') {
+    if (privateEnv.NODE_ENV === 'production') {
+      throw new Error('AUTH_SECRET must be configured in production.');
+    }
+
+    return 'songboard-local-secret';
+  }
+
+  return privateEnv.AUTH_SECRET;
+};
+
+const signValue = (value: string) => createHmac('sha256', getAuthSecret()).update(value).digest('hex');
 
 const buildCookieValue = () => {
   const payload = `admin:${Date.now()}`;
@@ -40,7 +52,7 @@ export const setAdminSession = (cookies: Cookies) => {
     httpOnly: true,
     sameSite: 'lax',
     secure: privateEnv.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7
+    maxAge: sessionMaxAgeSeconds
   });
 };
 
@@ -65,7 +77,25 @@ export const verifyAdminSession = (cookies: Cookies) => {
 
   const payload = raw.slice(0, lastDotIndex);
   const signature = raw.slice(lastDotIndex + 1);
-  const expectedSignature = signValue(payload);
+  const [subject, issuedAtRaw] = payload.split(':');
+  const issuedAt = Number(issuedAtRaw);
+
+  if (subject !== 'admin' || !Number.isFinite(issuedAt)) {
+    return false;
+  }
+
+  if (Date.now() - issuedAt > sessionMaxAgeSeconds * 1000) {
+    return false;
+  }
+
+  let expectedSignature: string;
+
+  try {
+    expectedSignature = signValue(payload);
+  } catch {
+    return false;
+  }
+
   const encoder = new TextEncoder();
 
   const left = encoder.encode(signature);
@@ -96,6 +126,15 @@ export const loginAdmin = async ({
   }
 
   if (hasSupabaseAuth()) {
+    const adminEmail = getDemoCredentials().email.toLowerCase();
+
+    if (normalizedEmail !== adminEmail) {
+      return {
+        ok: false,
+        message: '该账号不是管理员账号。'
+      };
+    }
+
     const client = createClient(publicEnv.PUBLIC_SUPABASE_URL!, publicEnv.PUBLIC_SUPABASE_ANON_KEY!, {
       auth: {
         persistSession: false,

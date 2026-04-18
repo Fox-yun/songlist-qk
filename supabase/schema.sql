@@ -32,27 +32,16 @@ create policy "public songs are readable"
   using (is_public = true);
 
 drop policy if exists "authenticated users can manage songs" on public.songs;
-create policy "authenticated users can manage songs"
-  on public.songs
-  for all
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
 
 drop policy if exists "public can create requests" on public.requests;
 create policy "public can create requests"
   on public.requests
   for insert
-  with check (true);
+  with check (
+    status = 'pending'
+    and matched_song_id is null
+  );
 
 drop policy if exists "authenticated users can read requests" on public.requests;
-create policy "authenticated users can read requests"
-  on public.requests
-  for select
-  using (auth.role() = 'authenticated');
 
 drop policy if exists "authenticated users can update requests" on public.requests;
-create policy "authenticated users can update requests"
-  on public.requests
-  for update
-  using (auth.role() = 'authenticated')
-  with check (auth.role() = 'authenticated');
