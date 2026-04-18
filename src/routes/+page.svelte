@@ -80,10 +80,10 @@
 
           <div class="max-w-3xl space-y-4">
             <h1 class="text-3xl font-semibold tracking-tight text-[#191a1b] lg:text-5xl">
-              Airi 的直播歌单
+              {data.catalog.streamer.tagline}
             </h1>
             <p class="max-w-2xl text-sm leading-7 text-[#62666d] lg:text-base">
-              搜索会唱的歌，按语言、标签和状态快速筛选；想听的新歌也可以直接留在愿望单里。
+              {data.catalog.streamer.description}
             </p>
           </div>
 
