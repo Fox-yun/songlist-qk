@@ -12,6 +12,12 @@
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
 
+  const confirmDelete = (event: SubmitEvent) => {
+    if (!confirm('确认删除这首歌？')) {
+      event.preventDefault();
+    }
+  };
+
   const requestStatusClass = (status: RequestStatus) => {
     switch (status) {
       case 'pending':
@@ -227,7 +233,7 @@
                   </button>
                 </form>
 
-                <form method="POST" action="?/deleteSong" class="flex flex-col justify-end">
+                <form method="POST" action="?/deleteSong" class="flex flex-col justify-end" onsubmit={confirmDelete}>
                   <input type="hidden" name="id" value={song.id} />
                   <button
                     type="submit"
