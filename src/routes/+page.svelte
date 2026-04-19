@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { songStatusClasses } from '$lib/status-styles';
   import { songStatusLabels, type Song, type SongStatus } from '$lib/types';
 
   import type { ActionData, PageData } from './$types';
@@ -14,17 +15,6 @@
     'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1740&auto=format&fit=crop';
 
   const normalize = (value: string) => value.trim().toLowerCase();
-
-  const statusClass = (status: SongStatus) => {
-    switch (status) {
-      case 'ready':
-        return 'border-[#10b981]/30 bg-[#10b981]/10 text-[#27a644]';
-      case 'learning':
-        return 'border-[#7170ff]/30 bg-[#7170ff]/10 text-[#5e6ad2]';
-      case 'resting':
-        return 'border-[#d0d6e0] bg-[#f3f4f5] text-[#62666d]';
-    }
-  };
 
   const matchesKeyword = (song: Song, keyword: string) => {
     if (!keyword) {
@@ -288,7 +278,7 @@
 
               <div>
                 <p class="mb-2 text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">当前状态</p>
-                <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${statusClass(song.status)}`}>
+                <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${songStatusClasses[song.status]}`}>
                   {songStatusLabels[song.status]}
                 </span>
               </div>

@@ -1,27 +1,16 @@
 <script lang="ts">
+  import { songStatusClasses } from '$lib/status-styles';
   import {
     requestStatusLabels,
     requestStatusOptions,
     songStatusLabels,
     songStatusOptions,
-    type RequestStatus,
-    type SongStatus
+    type RequestStatus
   } from '$lib/types';
 
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
-
-  const songStatusClass = (status: SongStatus) => {
-    switch (status) {
-      case 'ready':
-        return 'border-[#10b981]/30 bg-[#10b981]/10 text-[#27a644]';
-      case 'learning':
-        return 'border-[#7170ff]/30 bg-[#7170ff]/10 text-[#5e6ad2]';
-      case 'resting':
-        return 'border-[#d0d6e0] bg-[#f3f4f5] text-[#62666d]';
-    }
-  };
 
   const requestStatusClass = (status: RequestStatus) => {
     switch (status) {
@@ -178,7 +167,7 @@
                   <p class="mt-1 truncate text-sm text-[#62666d]">{song.artist} · {song.language}</p>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-2">
-                  <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${songStatusClass(song.status)}`}>
+                  <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${songStatusClasses[song.status]}`}>
                     {songStatusLabels[song.status]}
                   </span>
                   <span class="rounded-full border border-[#e6e6e6] bg-white px-3 py-1 text-xs text-[#62666d]">
