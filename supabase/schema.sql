@@ -31,8 +31,6 @@ create policy "public songs are readable"
   for select
   using (is_public = true);
 
-drop policy if exists "authenticated users can manage songs" on public.songs;
-
 drop policy if exists "public can create requests" on public.requests;
 create policy "public can create requests"
   on public.requests
@@ -41,7 +39,3 @@ create policy "public can create requests"
     status = 'pending'
     and matched_song_id is null
   );
-
-drop policy if exists "authenticated users can read requests" on public.requests;
-
-drop policy if exists "authenticated users can update requests" on public.requests;
