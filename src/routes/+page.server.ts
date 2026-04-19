@@ -11,6 +11,13 @@ const requestBuckets = new Map<string, { count: number; resetAt: number }>();
 
 const canSubmitRequest = (clientId: string) => {
   const now = Date.now();
+
+  for (const [bucketClientId, bucket] of requestBuckets) {
+    if (bucket.resetAt <= now) {
+      requestBuckets.delete(bucketClientId);
+    }
+  }
+
   const bucket = requestBuckets.get(clientId);
 
   if (!bucket || bucket.resetAt <= now) {
