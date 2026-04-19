@@ -161,8 +161,7 @@ export const getPublicCatalog = async (): Promise<PublicCatalog> => {
 };
 
 export const getAdminDashboardData = async (): Promise<AdminDashboardData> => {
-  const songs = await listSongs();
-  const requests = await listRequests();
+  const [songs, requests] = await Promise.all([listSongs(), listRequests()]);
 
   return {
     streamer: streamerProfile,
