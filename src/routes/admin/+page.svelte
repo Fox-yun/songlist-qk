@@ -12,11 +12,6 @@
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
 
-  const fieldClass =
-    'w-full rounded-[18px] border border-[#e6e6e6] bg-white px-4 py-3 text-[#191a1b] shadow-sm outline-none transition placeholder:text-[#8a8f98] focus:border-[#7170ff] focus:ring-4 focus:ring-[#7170ff]/15';
-  const inlineFieldClass =
-    'w-full rounded-[18px] border border-[#e6e6e6] bg-[#f5f6f7] px-4 py-3 text-[#191a1b] outline-none transition placeholder:text-[#8a8f98] focus:border-[#7170ff] focus:bg-white focus:ring-4 focus:ring-[#7170ff]/15';
-
   const songStatusClass = (status: SongStatus) => {
     switch (status) {
       case 'ready':
@@ -130,23 +125,23 @@
       <form method="POST" action="?/saveSong" class="mt-6 space-y-4">
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>歌曲名</span>
-          <input name="title" class={fieldClass} placeholder="例如：祝福" />
+          <input name="title" class="form-field" placeholder="例如：祝福" />
         </label>
 
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>原唱</span>
-          <input name="artist" class={fieldClass} placeholder="例如：YOASOBI" />
+          <input name="artist" class="form-field" placeholder="例如：YOASOBI" />
         </label>
 
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="block space-y-2 text-sm text-[#62666d]">
             <span>语言</span>
-            <input name="language" class={fieldClass} placeholder="例如：日语" />
+            <input name="language" class="form-field" placeholder="例如：日语" />
           </label>
 
           <label class="block space-y-2 text-sm text-[#62666d]">
             <span>状态</span>
-            <select name="status" class={fieldClass}>
+            <select name="status" class="form-field">
               {#each songStatusOptions as status}
                 <option value={status}>{songStatusLabels[status]}</option>
               {/each}
@@ -156,7 +151,7 @@
 
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>标签（逗号分隔）</span>
-          <input name="tagsInput" class={fieldClass} placeholder="例如：高能, 日语, 动画" />
+          <input name="tagsInput" class="form-field" placeholder="例如：高能, 日语, 动画" />
         </label>
 
         <label class="flex items-center gap-3 rounded-[18px] border border-[#e6e6e6] bg-[#f5f6f7] px-4 py-3 text-sm text-[#62666d]">
@@ -209,22 +204,22 @@
 
                   <label class="block space-y-2 text-sm text-[#62666d] lg:col-span-2">
                     <span>歌曲名</span>
-                    <input name="title" value={song.title} class={inlineFieldClass} />
+                    <input name="title" value={song.title} class="form-field-muted" />
                   </label>
 
                   <label class="block space-y-2 text-sm text-[#62666d]">
                     <span>原唱</span>
-                    <input name="artist" value={song.artist} class={inlineFieldClass} />
+                    <input name="artist" value={song.artist} class="form-field-muted" />
                   </label>
 
                   <label class="block space-y-2 text-sm text-[#62666d]">
                     <span>语言</span>
-                    <input name="language" value={song.language} class={inlineFieldClass} />
+                    <input name="language" value={song.language} class="form-field-muted" />
                   </label>
 
                   <label class="block space-y-2 text-sm text-[#62666d]">
                     <span>状态</span>
-                    <select name="status" class={inlineFieldClass}>
+                    <select name="status" class="form-field-muted">
                       {#each songStatusOptions as status}
                         <option value={status} selected={song.status === status}>{songStatusLabels[status]}</option>
                       {/each}
@@ -233,7 +228,7 @@
 
                   <label class="block space-y-2 text-sm text-[#62666d]">
                     <span>标签</span>
-                    <input name="tagsInput" value={song.tags.join(', ')} class={inlineFieldClass} />
+                    <input name="tagsInput" value={song.tags.join(', ')} class="form-field-muted" />
                   </label>
 
                   <label class="flex items-center gap-3 rounded-[18px] border border-[#e6e6e6] bg-[#f5f6f7] px-4 py-3 text-sm text-[#62666d] lg:col-span-2">
@@ -301,7 +296,7 @@
 
                 <form method="POST" action="?/updateRequestStatus" class="flex w-full shrink-0 gap-3 lg:w-auto lg:min-w-[260px] lg:flex-col">
                   <input type="hidden" name="id" value={item.id} />
-                  <select name="status" class={inlineFieldClass}>
+                  <select name="status" class="form-field-muted">
                     {#each requestStatusOptions as status}
                       <option value={status} selected={item.status === status}>{requestStatusLabels[status]}</option>
                     {/each}

@@ -2,9 +2,6 @@
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
-
-  const fieldClass =
-    'w-full rounded-[18px] border border-[#e6e6e6] bg-white px-4 py-3 text-[#191a1b] shadow-sm outline-none transition placeholder:text-[#8a8f98] focus:border-[#7170ff] focus:ring-4 focus:ring-[#7170ff]/15';
 </script>
 
 <svelte:head>
@@ -71,7 +68,7 @@
           name="email"
           type="email"
           value={form?.values?.email ?? ''}
-          class={fieldClass}
+          class="form-field"
           placeholder="admin@example.com"
         />
       </label>
@@ -81,7 +78,7 @@
         <input
           name="password"
           type="password"
-          class={fieldClass}
+          class="form-field"
           placeholder="请输入管理员密码"
         />
       </label>

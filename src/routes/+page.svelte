@@ -12,10 +12,6 @@
 
   const coverImage =
     'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1740&auto=format&fit=crop';
-  const fieldClass =
-    'w-full rounded-[18px] border border-[#e6e6e6] bg-white px-4 py-3 text-[#191a1b] shadow-sm outline-none transition placeholder:text-[#8a8f98] focus:border-[#7170ff] focus:ring-4 focus:ring-[#7170ff]/15';
-  const selectClass =
-    'w-full rounded-[18px] border border-[#e6e6e6] bg-white px-4 py-3 text-[#191a1b] shadow-sm outline-none transition focus:border-[#7170ff] focus:ring-4 focus:ring-[#7170ff]/15';
 
   const normalize = (value: string) => value.trim().toLowerCase();
 
@@ -167,7 +163,7 @@
             <input
               name="songTitle"
               value={form?.requestValues?.songTitle ?? ''}
-              class={fieldClass}
+              class="form-field"
               placeholder="例如：群青"
             />
           </label>
@@ -177,7 +173,7 @@
             <input
               name="artist"
               value={form?.requestValues?.artist ?? ''}
-              class={fieldClass}
+              class="form-field"
               placeholder="例如：YOASOBI"
             />
           </label>
@@ -187,7 +183,7 @@
             <textarea
               name="message"
               rows="5"
-              class={fieldClass}
+              class="form-field"
               placeholder="可以说说为什么想听、适合什么场合唱。"
             >{form?.requestValues?.message ?? ''}</textarea>
           </label>
@@ -197,7 +193,7 @@
             <input
               name="requesterName"
               value={form?.requestValues?.requesterName ?? ''}
-              class={fieldClass}
+              class="form-field"
               placeholder="例如：夜猫子"
             />
           </label>
@@ -230,14 +226,14 @@
           <span>搜索</span>
           <input
             bind:value={query}
-            class={fieldClass}
+            class="form-field"
             placeholder="按歌名、原唱、标签搜索"
           />
         </label>
 
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>语言</span>
-          <select bind:value={selectedLanguage} class={selectClass}>
+          <select bind:value={selectedLanguage} class="form-field">
             <option value="all">全部语言</option>
             {#each data.catalog.languages as language}
               <option value={language}>{language}</option>
@@ -247,7 +243,7 @@
 
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>标签</span>
-          <select bind:value={selectedTag} class={selectClass}>
+          <select bind:value={selectedTag} class="form-field">
             <option value="all">全部标签</option>
             {#each data.catalog.tags as tag}
               <option value={tag}>{tag}</option>
@@ -257,7 +253,7 @@
 
         <label class="block space-y-2 text-sm text-[#62666d]">
           <span>当前状态</span>
-          <select bind:value={selectedStatus} class={selectClass}>
+          <select bind:value={selectedStatus} class="form-field">
             <option value="all">全部状态</option>
             {#each data.catalog.statuses as status}
               <option value={status}>{songStatusLabels[status]}</option>
