@@ -5,6 +5,7 @@ import { readText } from '$lib/server/form-utils';
 import {
 	deleteSong as removeSong,
 	getAdminDashboardData,
+	resetDatabase as resetSongboardDatabase,
 	saveSong,
 	updateRequestStatus
 } from '$lib/server/repository';
@@ -108,6 +109,20 @@ export const actions: Actions = {
 
     return {
       adminMessage: '愿望状态已更新。'
+    };
+  },
+
+  resetDatabase: async () => {
+    try {
+      await resetSongboardDatabase();
+    } catch (error) {
+      return fail(500, {
+        adminError: error instanceof Error ? error.message : '重置数据库失败。'
+      });
+    }
+
+    return {
+      adminMessage: '数据库已恢复到空白初始状态。'
     };
   },
 

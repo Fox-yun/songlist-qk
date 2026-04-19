@@ -269,6 +269,22 @@ export const deleteSong = async (id: string) => {
   }
 };
 
+export const resetDatabase = async () => {
+  const supabase = getSupabaseAdmin();
+
+  const { error: requestsError } = await supabase.from('requests').delete().not('id', 'is', null);
+
+  if (requestsError) {
+    throw requestsError;
+  }
+
+  const { error: songsError } = await supabase.from('songs').delete().not('id', 'is', null);
+
+  if (songsError) {
+    throw songsError;
+  }
+};
+
 export const updateRequestStatus = async ({
   id,
   status

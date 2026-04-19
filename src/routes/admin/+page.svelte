@@ -18,6 +18,12 @@
     }
   };
 
+  const confirmReset = (event: SubmitEvent) => {
+    if (!confirm('确认清空全部歌曲和愿望单？此操作不可撤销。')) {
+      event.preventDefault();
+    }
+  };
+
   const requestStatusClass = (status: RequestStatus) => {
     switch (status) {
       case 'pending':
@@ -74,14 +80,25 @@
           <p class="text-sm font-medium text-[#5e6ad2]">会话</p>
           <h2 class="mt-1 text-2xl font-semibold text-[#191a1b]">管理员操作</h2>
         </div>
-        <form method="POST" action="?/logout">
-          <button
-            type="submit"
-            class="rounded-full border border-[#e6e6e6] px-4 py-2 text-sm text-[#62666d] transition hover:border-[#d0d6e0] hover:bg-[#f5f6f7] hover:text-[#5e6ad2]"
-          >
-            退出登录
-          </button>
-        </form>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <form method="POST" action="?/resetDatabase" onsubmit={confirmReset}>
+            <button
+              type="submit"
+              class="rounded-full border border-[#d0d6e0] px-4 py-2 text-sm text-[#62666d] transition hover:bg-[#f5f6f7] hover:text-[#5e6ad2]"
+            >
+              重置数据库
+            </button>
+          </form>
+
+          <form method="POST" action="?/logout">
+            <button
+              type="submit"
+              class="rounded-full border border-[#e6e6e6] px-4 py-2 text-sm text-[#62666d] transition hover:border-[#d0d6e0] hover:bg-[#f5f6f7] hover:text-[#5e6ad2]"
+            >
+              退出登录
+            </button>
+          </form>
+        </div>
       </div>
 
       {#if form?.adminMessage}
