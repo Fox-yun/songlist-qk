@@ -57,8 +57,6 @@ export interface AdminDashboardData {
   streamer: StreamerProfile;
   songs: Song[];
   requests: SongRequest[];
-  tags: string[];
-  languages: string[];
   overview: CatalogStats;
   backendMode: BackendMode;
 }

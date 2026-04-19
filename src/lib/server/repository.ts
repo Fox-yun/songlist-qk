@@ -200,14 +200,11 @@ export const getPublicCatalog = async (): Promise<PublicCatalog> => {
 export const getAdminDashboardData = async (): Promise<AdminDashboardData> => {
   const songs = await listSongs();
   const requests = await listRequests();
-  const metadata = buildCatalogMetadata(songs);
 
   return {
     streamer: streamerProfile,
     songs,
     requests,
-    tags: metadata.tags,
-    languages: metadata.languages,
     overview: buildStats(songs, countPendingRequests(requests)),
     backendMode: getBackendMode()
   };
