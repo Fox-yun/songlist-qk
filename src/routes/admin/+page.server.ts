@@ -12,7 +12,7 @@ import {
 	saveSong,
 	updateRequestStatus
 } from '$lib/server/repository';
-import { playlistImportSettingsSchema, playlistPreviewSchema, requestStatusSchema, songSchema } from '$lib/validators';
+import { playlistImportSettingsSchema, playlistPreviewSchema, playlistSongImportSchema, requestStatusSchema, songSchema } from '$lib/validators';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -27,7 +27,9 @@ const readPreviewSongs = (formData: FormData) => {
 
   return Array.from({ length: songCount }, (_, index) => ({
     title: readText(formData.get(`songTitle-${index}`)),
-    artist: readText(formData.get(`songArtist-${index}`))
+    artist: readText(formData.get(`songArtist-${index}`)),
+    language: readText(formData.get(`songLanguage-${index}`)),
+    tagsInput: readText(formData.get(`songTagsInput-${index}`))
   })).filter((song) => song.title && song.artist);
 };
 
@@ -102,15 +104,15 @@ export const actions: Actions = {
 
   previewPlaylist: async ({ request }) => {
     const formData = await request.formData();
+    const playlistInput = readText(formData.get('playlistInput'));
     const parsed = playlistPreviewSchema.safeParse({
-      playlistInput: readText(formData.get('playlistInput')),
-      status: readText(formData.get('status')),
-      tagsInput: readText(formData.get('tagsInput'))
+      playlistInput
     });
 
     if (!parsed.success) {
       return fail(400, {
-        adminError: parsed.error.issues[0]?.message ?? '导入歌单失败。'
+        adminError: parsed.error.issues[0]?.message ?? '导入歌单失败。',
+        playlistImport: { playlistInput }
       });
     }
 
@@ -121,24 +123,26 @@ export const actions: Actions = {
         adminMessage: `已解析 ${playlistSongs.length} 首歌曲，请勾选要导入的歌曲。`,
         playlistPreview: {
           playlistInput: parsed.data.playlistInput,
-          status: parsed.data.status,
-          tagsInput: parsed.data.tagsInput.join(', '),
-          songs: playlistSongs
+          status: 'ready',
+          songs: playlistSongs.map((song) => ({
+            ...song,
+            language: defaultSongLanguage,
+            tagsInput: ''
+          }))
         }
       };
     } catch (error) {
       return fail(500, {
-        adminError: error instanceof Error ? error.message : '解析歌单失败。'
+        adminError: error instanceof Error ? error.message : '解析歌单失败。',
+        playlistImport: { playlistInput: parsed.data.playlistInput }
       });
     }
   },
 
   importPlaylist: async ({ request }) => {
     const formData = await request.formData();
-    const tagsInput = readText(formData.get('tagsInput'));
     const parsed = playlistImportSettingsSchema.safeParse({
-      status: readText(formData.get('status')),
-      tagsInput
+      status: readText(formData.get('status'))
     });
 
     if (!parsed.success) {
@@ -153,7 +157,6 @@ export const actions: Actions = {
     const playlistPreview = {
       playlistInput: readText(formData.get('playlistInput')),
       status: parsed.data.status,
-      tagsInput,
       songs: previewSongs
     };
 
@@ -164,14 +167,37 @@ export const actions: Actions = {
       });
     }
 
+    const songsToImport = [];
+
+    for (const song of selectedSongs) {
+      const parsedSong = playlistSongImportSchema.safeParse({
+        language: song.language,
+        tagsInput: song.tagsInput
+      });
+
+      if (!parsedSong.success) {
+        return fail(400, {
+          adminError: parsedSong.error.issues[0]?.message ?? '导入歌单失败。',
+          playlistPreview
+        });
+      }
+
+      songsToImport.push({
+        title: song.title,
+        artist: song.artist,
+        language: parsedSong.data.language,
+        tags: parsedSong.data.tagsInput
+      });
+    }
+
     try {
       const importedSongs = await importSongs(
-        selectedSongs.map((song) => ({
+        songsToImport.map((song) => ({
           title: song.title,
           artist: song.artist,
-          language: defaultSongLanguage,
+          language: song.language,
           status: parsed.data.status,
-          tags: parsed.data.tagsInput,
+          tags: song.tags,
           isPublic: true
         }))
       );

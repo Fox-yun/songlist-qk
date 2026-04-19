@@ -33,11 +33,17 @@ export const songSchema = z.object({
 export const playlistImportSettingsSchema = z.object({
   status: z.enum(songStatusOptions, {
     errorMap: () => ({ message: '请选择有效状态。' })
+  })
+});
+
+export const playlistSongImportSchema = z.object({
+  language: z.enum(songLanguageOptions, {
+    errorMap: () => ({ message: '请选择有效语言。' })
   }),
   tagsInput: z.string().trim().max(240, '标签内容过长。').transform(csvToTags)
 });
 
-export const playlistPreviewSchema = playlistImportSettingsSchema.extend({
+export const playlistPreviewSchema = z.object({
   playlistInput: z.string().trim().min(1, '请填写网易云公开歌单链接或 ID。').max(240, '歌单链接过长。')
 });
 

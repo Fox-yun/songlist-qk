@@ -13,6 +13,8 @@
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
+  let importModalDismissed = $state(false);
+  const adminError = $derived(form && 'adminError' in form ? form.adminError : undefined);
 
   const confirmDelete = (event: SubmitEvent) => {
     if (!confirm('确认删除这首歌？')) {
@@ -24,6 +26,10 @@
     if (!confirm('确认清空全部歌曲和愿望单？此操作不可撤销。')) {
       event.preventDefault();
     }
+  };
+
+  const closeImportModal = () => {
+    importModalDismissed = true;
   };
 
   const requestStatusClass = (status: RequestStatus) => {
@@ -109,10 +115,12 @@
         </div>
       {/if}
 
-      {#if form?.adminError}
-        <div class="mt-5 rounded-[18px] border border-[#7170ff]/30 bg-[#7170ff]/10 px-4 py-3 text-sm text-[#5e6ad2]">
-          {form.adminError}
-        </div>
+      {#if adminError}
+        {#if !form?.playlistPreview}
+          <div class="mt-5 rounded-[18px] border border-[#7170ff]/30 bg-[#7170ff]/10 px-4 py-3 text-sm text-[#5e6ad2]">
+            {adminError}
+          </div>
+        {/if}
       {/if}
 
     </div>
@@ -180,24 +188,15 @@
           <h2 class="mt-1 text-2xl font-semibold text-[#191a1b]">公开歌单导入</h2>
         </div>
 
-        <form method="POST" action="?/previewPlaylist" class="mt-6 space-y-4">
+        <form method="POST" action="?/previewPlaylist" class="mt-6 space-y-4" onsubmit={() => (importModalDismissed = false)}>
           <label class="block space-y-2 text-sm text-[#62666d]">
             <span>歌单链接或 ID</span>
-            <input name="playlistInput" class="form-field" placeholder="https://music.163.com/#/playlist?id=..." />
-          </label>
-
-          <label class="block space-y-2 text-sm text-[#62666d]">
-            <span>状态</span>
-            <select name="status" class="form-field">
-              {#each songStatusOptions as status}
-                <option value={status} selected={status === 'ready'}>{songStatusLabels[status]}</option>
-              {/each}
-            </select>
-          </label>
-
-          <label class="block space-y-2 text-sm text-[#62666d]">
-            <span>标签（逗号分隔）</span>
-            <input name="tagsInput" class="form-field" placeholder="例如：网易云导入" />
+            <input
+              name="playlistInput"
+              class="form-field"
+              value={form?.playlistImport?.playlistInput ?? form?.playlistPreview?.playlistInput ?? ''}
+              placeholder="https://music.163.com/#/playlist?id=..."
+            />
           </label>
 
           <button
@@ -207,62 +206,6 @@
             解析歌单
           </button>
         </form>
-
-        {#if form?.playlistPreview}
-          <form method="POST" action="?/importPlaylist" class="mt-6 space-y-4">
-            <input type="hidden" name="playlistInput" value={form.playlistPreview.playlistInput} />
-            <input type="hidden" name="status" value={form.playlistPreview.status} />
-            <input type="hidden" name="tagsInput" value={form.playlistPreview.tagsInput} />
-            <input type="hidden" name="songCount" value={form.playlistPreview.songs.length} />
-
-            <div class="rounded-[18px] border border-[#e6e6e6] bg-[#f5f6f7] px-4 py-3 text-sm text-[#62666d]">
-              <p>
-                {form.playlistPreview.songs.length} 首待确认 · {defaultSongLanguage} · {songStatusLabels[form.playlistPreview.status]}
-              </p>
-              {#if form.playlistPreview.tagsInput}
-                <p class="mt-1 text-xs text-[#8a8f98]">标签：{form.playlistPreview.tagsInput}</p>
-              {/if}
-            </div>
-
-            <div class="max-h-[420px] overflow-auto rounded-[18px] border border-[#e6e6e6]">
-              <table class="w-full min-w-[360px] text-left text-sm">
-                <thead class="sticky top-0 bg-white text-xs uppercase tracking-[0.12em] text-[#8a8f98]">
-                  <tr>
-                    <th class="w-12 px-3 py-3">选</th>
-                    <th class="px-3 py-3">歌曲</th>
-                    <th class="px-3 py-3">原唱</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[#e6e6e6] bg-white">
-                  {#each form.playlistPreview.songs as song, index}
-                    <tr>
-                      <td class="px-3 py-3 align-top">
-                        <input
-                          name="selectedSong"
-                          type="checkbox"
-                          value={index}
-                          class="h-4 w-4 rounded border-[#d0d6e0] accent-[#5e6ad2]"
-                          checked
-                        />
-                        <input type="hidden" name={`songTitle-${index}`} value={song.title} />
-                        <input type="hidden" name={`songArtist-${index}`} value={song.artist} />
-                      </td>
-                      <td class="px-3 py-3 text-[#191a1b]">{song.title}</td>
-                      <td class="px-3 py-3 text-[#62666d]">{song.artist}</td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-
-            <button
-              type="submit"
-              class="inline-flex w-full items-center justify-center rounded-[18px] bg-[#5e6ad2] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#828fff]"
-            >
-              导入勾选歌曲
-            </button>
-          </form>
-        {/if}
       </div>
     </div>
 
@@ -418,3 +361,105 @@
     </div>
   </section>
 </div>
+
+{#if form?.playlistPreview && !importModalDismissed}
+  <div class="fixed inset-0 z-50 overflow-y-auto bg-[#191a1b]/50 px-4 py-8">
+    <section class="mx-auto max-w-5xl rounded-[24px] border border-[#e6e6e6] bg-white p-6 shadow-xl lg:p-7">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-sm font-medium text-[#5e6ad2]">导入网易云</p>
+          <h2 class="mt-1 text-2xl font-semibold text-[#191a1b]">公开歌单导入</h2>
+        </div>
+
+        <button
+          type="button"
+          class="rounded-full border border-[#e6e6e6] px-4 py-2 text-sm text-[#62666d] transition hover:border-[#d0d6e0] hover:bg-[#f5f6f7] hover:text-[#5e6ad2]"
+          onclick={closeImportModal}
+        >
+          关闭
+        </button>
+      </div>
+
+      {#if adminError}
+        <div class="mt-5 rounded-[18px] border border-[#7170ff]/30 bg-[#7170ff]/10 px-4 py-3 text-sm text-[#5e6ad2]">
+          {adminError}
+        </div>
+      {/if}
+
+      <form method="POST" action="?/importPlaylist" class="mt-6 space-y-5">
+        <input type="hidden" name="playlistInput" value={form.playlistPreview.playlistInput} />
+        <input type="hidden" name="songCount" value={form.playlistPreview.songs.length} />
+
+        <label class="block space-y-2 text-sm text-[#62666d]">
+          <span>状态</span>
+          <select name="status" class="form-field">
+            {#each songStatusOptions as status}
+              <option value={status} selected={form.playlistPreview.status === status}>{songStatusLabels[status]}</option>
+            {/each}
+          </select>
+        </label>
+
+        <div class="rounded-[18px] border border-[#e6e6e6] bg-[#f5f6f7] px-4 py-3 text-sm text-[#62666d]">
+          {form.playlistPreview.songs.length} 首待确认
+        </div>
+
+        <div class="max-h-[56vh] overflow-auto rounded-[18px] border border-[#e6e6e6]">
+          <table class="w-full min-w-[760px] text-left text-sm">
+            <thead class="sticky top-0 bg-white text-xs uppercase tracking-[0.12em] text-[#8a8f98]">
+              <tr>
+                <th class="w-12 px-3 py-3">选</th>
+                <th class="px-3 py-3">歌曲</th>
+                <th class="px-3 py-3">原唱</th>
+                <th class="px-3 py-3">语言</th>
+                <th class="px-3 py-3">标签</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#e6e6e6] bg-white">
+              {#each form.playlistPreview.songs as song, index}
+                <tr>
+                  <td class="px-3 py-3 align-middle">
+                    <div class="flex justify-center">
+                      <input
+                        name="selectedSong"
+                        type="checkbox"
+                        value={index}
+                        class="h-4 w-4 rounded border-[#d0d6e0] accent-[#5e6ad2]"
+                        checked
+                      />
+                    </div>
+                    <input type="hidden" name={`songTitle-${index}`} value={song.title} />
+                    <input type="hidden" name={`songArtist-${index}`} value={song.artist} />
+                  </td>
+                  <td class="px-3 py-3 text-[#191a1b]">{song.title}</td>
+                  <td class="px-3 py-3 text-[#62666d]">{song.artist}</td>
+                  <td class="px-3 py-3">
+                    <select name={`songLanguage-${index}`} class="form-field-muted min-w-28">
+                      {#each songLanguageOptions as language}
+                        <option value={language} selected={(song.language || defaultSongLanguage) === language}>{language}</option>
+                      {/each}
+                    </select>
+                  </td>
+                  <td class="px-3 py-3">
+                    <input
+                      name={`songTagsInput-${index}`}
+                      class="form-field-muted min-w-48"
+                      value={song.tagsInput ?? ''}
+                      placeholder="例如：网易云导入"
+                    />
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+
+        <button
+          type="submit"
+          class="inline-flex w-full items-center justify-center rounded-[18px] bg-[#5e6ad2] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#828fff]"
+        >
+          导入勾选歌曲
+        </button>
+      </form>
+    </section>
+  </div>
+{/if}
