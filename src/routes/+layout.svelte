@@ -1,11 +1,24 @@
 <script lang="ts">
   import '../app.css';
 
+  import { onMount } from 'svelte';
+
   import type { Snippet } from 'svelte';
 
   import type { LayoutData } from './$types';
 
   let { data, children } = $props<{ data: LayoutData; children: Snippet }>();
+  let isDark = $state(false);
+
+  onMount(() => {
+    isDark = document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    isDark = !isDark;
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  };
 </script>
 
 <svelte:head>
@@ -17,6 +30,11 @@
 </svelte:head>
 
 <div class="min-h-screen">
+  <div class="pointer-events-none fixed inset-0 -z-10 opacity-0 transition-opacity duration-300 dark:opacity-100">
+    <div class="absolute left-[-14rem] top-[-18rem] h-[36rem] w-[36rem] rounded-full bg-[#2563eb]/20 blur-[120px]"></div>
+    <div class="absolute right-[-16rem] top-24 h-[34rem] w-[34rem] rounded-full bg-[#14b8a6]/10 blur-[120px]"></div>
+  </div>
+
   <header class="sticky top-0 z-20 border-b border-[#e6e6e6] bg-white/90 shadow-sm backdrop-blur-xl">
     <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
       <a href="/" class="flex min-w-0 items-center gap-3 text-sm font-medium text-[#191a1b]">
@@ -30,6 +48,15 @@
       </a>
 
       <nav class="flex flex-wrap items-center gap-2 text-sm text-[#62666d]">
+        <button
+          type="button"
+          class="button button-neutral button-small"
+          aria-pressed={isDark}
+          onclick={toggleTheme}
+        >
+          {isDark ? '亮色' : '暗色'}
+        </button>
+
         <a
           href="/"
           class="button button-neutral button-small"
