@@ -4,18 +4,12 @@ create table if not exists public.songs (
   id uuid primary key default gen_random_uuid(),
   title text not null,
   artist text not null,
-  language text not null default '未指定',
+  language text not null,
   status text not null check (status in ('ready', 'learning', 'resting')),
   tags text[] not null default '{}',
   is_public boolean not null default true,
   created_at timestamptz not null default now()
 );
-
-alter table public.songs alter column language set default '未指定';
-alter table public.songs drop constraint if exists songs_language_check;
-alter table public.songs
-  add constraint songs_language_check
-  check (language in ('未指定', '中文', '英语', '日语', '其他'));
 
 create table if not exists public.requests (
   id uuid primary key default gen_random_uuid(),
@@ -37,11 +31,28 @@ create policy "public songs are readable"
   for select
   using (is_public = true);
 
+drop policy if exists "authenticated users can manage songs" on public.songs;
+create policy "authenticated users can manage songs"
+  on public.songs
+  for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
 drop policy if exists "public can create requests" on public.requests;
 create policy "public can create requests"
   on public.requests
   for insert
-  with check (
-    status = 'pending'
-    and matched_song_id is null
-  );
+  with check (true);
+
+drop policy if exists "authenticated users can read requests" on public.requests;
+create policy "authenticated users can read requests"
+  on public.requests
+  for select
+  using (auth.role() = 'authenticated');
+
+drop policy if exists "authenticated users can update requests" on public.requests;
+create policy "authenticated users can update requests"
+  on public.requests
+  for update
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');

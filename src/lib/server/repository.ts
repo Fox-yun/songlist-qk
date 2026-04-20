@@ -1,29 +1,35 @@
 import { randomUUID } from 'node:crypto';
 
+import { env as privateEnv } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { streamerProfile } from '$lib/config';
-import { getSupabaseConfig } from '$lib/server/env';
+import { sampleRequests, sampleSongs } from '$lib/sample-data';
 import {
   type CatalogStats,
   requestStatusOptions,
-  songLanguageOptions,
   songStatusOptions,
   type AdminDashboardData,
+  type BackendMode,
   type PublicCatalog,
   type RequestStatus,
   type Song,
-  type SongLanguage,
   type SongRequest,
   type SongStatus
 } from '$lib/types';
 import { createClient } from '@supabase/supabase-js';
+
+const memoryStore = {
+  songs: sampleSongs.map((song) => ({ ...song, tags: [...song.tags] })),
+  requests: sampleRequests.map((item) => ({ ...item }))
+};
 
 type SongRow = {
   id: string;
   title: string;
   artist: string;
   language: string;
-  status: string;
-  tags: string[];
+  status: SongStatus;
+  tags: string[] | null;
   is_public: boolean;
 };
 
@@ -33,41 +39,33 @@ type RequestRow = {
   artist: string;
   message: string;
   requester_name: string | null;
-  status: string;
+  status: RequestStatus;
   matched_song_id: string | null;
   created_at: string;
 };
 
 const sortStrings = (values: Iterable<string>) => Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 
-const parseSongStatus = (status: string): SongStatus => {
-  if (songStatusOptions.includes(status as SongStatus)) {
-    return status as SongStatus;
-  }
+const cloneSong = (song: Song): Song => ({
+  ...song,
+  tags: [...song.tags]
+});
 
-  throw new Error(`Invalid song status from database: ${status}`);
-};
+const cloneRequest = (item: SongRequest): SongRequest => ({
+  ...item
+});
 
-const parseRequestStatus = (status: string): RequestStatus => {
-  if (requestStatusOptions.includes(status as RequestStatus)) {
-    return status as RequestStatus;
-  }
-
-  throw new Error(`Invalid request status from database: ${status}`);
-};
-
-const parseSongLanguage = (language: string): SongLanguage => {
-  if (songLanguageOptions.includes(language as SongLanguage)) {
-    return language as SongLanguage;
-  }
-
-  throw new Error(`Invalid song language from database: ${language}`);
-};
+const getBackendMode = (): BackendMode =>
+  publicEnv.PUBLIC_SUPABASE_URL && publicEnv.PUBLIC_SUPABASE_ANON_KEY && privateEnv.SUPABASE_SERVICE_ROLE_KEY
+    ? 'supabase'
+    : 'memory';
 
 const getSupabaseAdmin = () => {
-  const supabaseConfig = getSupabaseConfig();
+  if (getBackendMode() !== 'supabase') {
+    return null;
+  }
 
-  return createClient(supabaseConfig.url, supabaseConfig.serviceRoleKey, {
+  return createClient(publicEnv.PUBLIC_SUPABASE_URL!, privateEnv.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
@@ -79,9 +77,9 @@ const mapSongRow = (row: SongRow): Song => ({
   id: row.id,
   title: row.title,
   artist: row.artist,
-  language: parseSongLanguage(row.language),
-  status: parseSongStatus(row.status),
-  tags: row.tags,
+  language: row.language,
+  status: songStatusOptions.includes(row.status) ? row.status : 'ready',
+  tags: row.tags ?? [],
   isPublic: row.is_public
 });
 
@@ -91,27 +89,23 @@ const mapRequestRow = (row: RequestRow): SongRequest => ({
   artist: row.artist,
   message: row.message,
   requesterName: row.requester_name,
-  status: parseRequestStatus(row.status),
+  status: requestStatusOptions.includes(row.status) ? row.status : 'pending',
   matchedSongId: row.matched_song_id,
   createdAt: row.created_at
 });
 
-const countPendingRequests = (requests: SongRequest[]) =>
-  requests.filter((item) => item.status === 'pending').length;
-
-const buildStats = (songs: Song[], pendingRequests: number): CatalogStats => ({
+const buildStats = (songs: Song[], requests: SongRequest[]): CatalogStats => ({
   totalSongs: songs.length,
   publicSongs: songs.filter((song) => song.isPublic).length,
-  pendingRequests
-});
-
-const buildCatalogMetadata = (songs: Song[]) => ({
-  tags: sortStrings(songs.flatMap((song) => song.tags)),
-  languages: songLanguageOptions
+  pendingRequests: requests.filter((item) => item.status === 'pending').length
 });
 
 const listSongs = async (): Promise<Song[]> => {
   const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return memoryStore.songs.map(cloneSong);
+  }
 
   const { data, error } = await supabase
     .from('songs')
@@ -128,6 +122,10 @@ const listSongs = async (): Promise<Song[]> => {
 const listRequests = async (): Promise<SongRequest[]> => {
   const supabase = getSupabaseAdmin();
 
+  if (!supabase) {
+    return memoryStore.requests.map(cloneRequest).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   const { data, error } = await supabase
     .from('requests')
     .select('id, song_title, artist, message, requester_name, status, matched_song_id, created_at')
@@ -140,44 +138,44 @@ const listRequests = async (): Promise<SongRequest[]> => {
   return ((data as RequestRow[] | null) ?? []).map(mapRequestRow);
 };
 
-const getPendingRequestCount = async (): Promise<number> => {
-  const supabase = getSupabaseAdmin();
+export const getCatalogMetadata = async (): Promise<{ tags: string[]; languages: string[] }> => {
+  const songs = await listSongs();
 
-  const { count, error } = await supabase
-    .from('requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending');
-
-  if (error) {
-    throw error;
-  }
-
-  return count ?? 0;
+  return {
+    tags: sortStrings(songs.flatMap((song) => song.tags)),
+    languages: sortStrings(songs.map((song) => song.language))
+  };
 };
 
 export const getPublicCatalog = async (): Promise<PublicCatalog> => {
   const songs = (await listSongs()).filter((song) => song.isPublic);
-  const pendingRequests = await getPendingRequestCount();
-  const metadata = buildCatalogMetadata(songs);
+  const requests = await listRequests();
+  const tags = sortStrings(songs.flatMap((song) => song.tags));
+  const languages = sortStrings(songs.map((song) => song.language));
 
   return {
     streamer: streamerProfile,
     songs,
-    tags: metadata.tags,
-    languages: metadata.languages,
+    tags,
+    languages,
     statuses: songStatusOptions,
-    stats: buildStats(songs, pendingRequests)
+    stats: buildStats(songs, requests),
+    backendMode: getBackendMode()
   };
 };
 
 export const getAdminDashboardData = async (): Promise<AdminDashboardData> => {
-  const [songs, requests] = await Promise.all([listSongs(), listRequests()]);
+  const songs = await listSongs();
+  const requests = await listRequests();
 
   return {
     streamer: streamerProfile,
     songs,
     requests,
-    overview: buildStats(songs, countPendingRequests(requests))
+    tags: sortStrings(songs.flatMap((song) => song.tags)),
+    languages: sortStrings(songs.map((song) => song.language)),
+    overview: buildStats(songs, requests),
+    backendMode: getBackendMode()
   };
 };
 
@@ -205,6 +203,11 @@ export const createSongRequest = async ({
 
   const supabase = getSupabaseAdmin();
 
+  if (!supabase) {
+    memoryStore.requests.unshift(payload);
+    return payload;
+  }
+
   const { error } = await supabase.from('requests').insert({
     id: payload.id,
     song_title: payload.songTitle,
@@ -223,46 +226,6 @@ export const createSongRequest = async ({
   return payload;
 };
 
-export const importSongs = async (
-  songs: Array<{
-    title: string;
-    artist: string;
-    language: SongLanguage;
-    status: SongStatus;
-    tags: string[];
-    isPublic: boolean;
-  }>
-) => {
-  const payloads: Song[] = songs.map((song) => ({
-    id: randomUUID(),
-    title: song.title,
-    artist: song.artist,
-    language: song.language,
-    status: song.status,
-    tags: sortStrings(song.tags),
-    isPublic: song.isPublic
-  }));
-  const supabase = getSupabaseAdmin();
-
-  const { error } = await supabase.from('songs').insert(
-    payloads.map((song) => ({
-      id: song.id,
-      title: song.title,
-      artist: song.artist,
-      language: song.language,
-      status: song.status,
-      tags: song.tags,
-      is_public: song.isPublic
-    }))
-  );
-
-  if (error) {
-    throw error;
-  }
-
-  return payloads;
-};
-
 export const saveSong = async ({
   id,
   title,
@@ -275,7 +238,7 @@ export const saveSong = async ({
   id?: string;
   title: string;
   artist: string;
-  language: SongLanguage;
+  language: string;
   status: SongStatus;
   tags: string[];
   isPublic: boolean;
@@ -291,6 +254,18 @@ export const saveSong = async ({
   };
 
   const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    const existingIndex = memoryStore.songs.findIndex((song) => song.id === payload.id);
+
+    if (existingIndex >= 0) {
+      memoryStore.songs[existingIndex] = payload;
+    } else {
+      memoryStore.songs.unshift(payload);
+    }
+
+    return payload;
+  }
 
   const { error } = await supabase.from('songs').upsert({
     id: payload.id,
@@ -312,26 +287,23 @@ export const saveSong = async ({
 export const deleteSong = async (id: string) => {
   const supabase = getSupabaseAdmin();
 
+  if (!supabase) {
+    memoryStore.songs = memoryStore.songs.filter((song) => song.id !== id);
+    memoryStore.requests = memoryStore.requests.map((item) =>
+      item.matchedSongId === id
+        ? {
+            ...item,
+            matchedSongId: null
+          }
+        : item
+    );
+    return;
+  }
+
   const { error } = await supabase.from('songs').delete().eq('id', id);
 
   if (error) {
     throw error;
-  }
-};
-
-export const resetDatabase = async () => {
-  const supabase = getSupabaseAdmin();
-
-  const { error: requestsError } = await supabase.from('requests').delete().not('id', 'is', null);
-
-  if (requestsError) {
-    throw requestsError;
-  }
-
-  const { error: songsError } = await supabase.from('songs').delete().not('id', 'is', null);
-
-  if (songsError) {
-    throw songsError;
   }
 };
 
@@ -343,6 +315,18 @@ export const updateRequestStatus = async ({
   status: RequestStatus;
 }) => {
   const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    memoryStore.requests = memoryStore.requests.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            status
+          }
+        : item
+    );
+    return;
+  }
 
   const { error } = await supabase.from('requests').update({ status }).eq('id', id);
 

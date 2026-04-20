@@ -1,18 +1,15 @@
 export const songStatusOptions = ['ready', 'learning', 'resting'] as const;
 export type SongStatus = (typeof songStatusOptions)[number];
 
-export const songLanguageOptions = ['未指定', '中文', '英语', '日语', '其他'] as const;
-export type SongLanguage = (typeof songLanguageOptions)[number];
-export const defaultSongLanguage: SongLanguage = '未指定';
-
 export const requestStatusOptions = ['pending', 'reviewing', 'planned', 'declined'] as const;
 export type RequestStatus = (typeof requestStatusOptions)[number];
+export type BackendMode = 'memory' | 'supabase';
 
 export interface Song {
   id: string;
   title: string;
   artist: string;
-  language: SongLanguage;
+  language: string;
   status: SongStatus;
   tags: string[];
   isPublic: boolean;
@@ -50,16 +47,20 @@ export interface PublicCatalog {
   streamer: StreamerProfile;
   songs: Song[];
   tags: string[];
-  languages: readonly SongLanguage[];
+  languages: string[];
   statuses: readonly SongStatus[];
   stats: CatalogStats;
+  backendMode: BackendMode;
 }
 
 export interface AdminDashboardData {
   streamer: StreamerProfile;
   songs: Song[];
   requests: SongRequest[];
+  tags: string[];
+  languages: string[];
   overview: CatalogStats;
+  backendMode: BackendMode;
 }
 
 export const songStatusLabels: Record<SongStatus, string> = {

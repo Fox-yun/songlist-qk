@@ -1,35 +1,18 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-import { dev } from '$app/environment';
 import { env as privateEnv } from '$env/dynamic/private';
-import { getSupabaseConfig } from '$lib/server/env';
+import { env as publicEnv } from '$env/dynamic/public';
 import { createClient } from '@supabase/supabase-js';
 import type { Cookies } from '@sveltejs/kit';
 
 const sessionCookieName = 'songboard_admin_session';
-const sessionMaxAgeSeconds = 60 * 60 * 24 * 7;
+const defaultAdminEmail = 'admin@example.com';
+const defaultAdminPassword = 'demo-admin';
 
-const getAuthSecret = () => {
-  if (!privateEnv.AUTH_SECRET || privateEnv.AUTH_SECRET === 'replace-me') {
-    if (!dev) {
-      throw new Error('AUTH_SECRET must be configured in production.');
-    }
+type AuthMode = 'demo' | 'supabase';
 
-    return 'songboard-local-secret';
-  }
-
-  return privateEnv.AUTH_SECRET;
-};
-
-const getAdminEmail = () => {
-  if (!privateEnv.ADMIN_EMAIL) {
-    throw new Error('ADMIN_EMAIL must be configured.');
-  }
-
-  return privateEnv.ADMIN_EMAIL;
-};
-
-const signValue = (value: string) => createHmac('sha256', getAuthSecret()).update(value).digest('hex');
+const signValue = (value: string) =>
+  createHmac('sha256', privateEnv.AUTH_SECRET || 'songboard-local-secret').update(value).digest('hex');
 
 const buildCookieValue = () => {
   const payload = `admin:${Date.now()}`;
@@ -37,13 +20,27 @@ const buildCookieValue = () => {
   return `${payload}.${signature}`;
 };
 
+const hasSupabaseAuth = () =>
+  Boolean(
+    publicEnv.PUBLIC_SUPABASE_URL &&
+      publicEnv.PUBLIC_SUPABASE_ANON_KEY &&
+      privateEnv.SUPABASE_SERVICE_ROLE_KEY
+  );
+
+export const getAuthMode = (): AuthMode => (hasSupabaseAuth() ? 'supabase' : 'demo');
+
+export const getDemoCredentials = () => ({
+  email: privateEnv.ADMIN_EMAIL || defaultAdminEmail,
+  password: privateEnv.ADMIN_PASSWORD || defaultAdminPassword
+});
+
 export const setAdminSession = (cookies: Cookies) => {
   cookies.set(sessionCookieName, buildCookieValue(), {
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
-    secure: !dev,
-    maxAge: sessionMaxAgeSeconds
+    secure: privateEnv.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 7
   });
 };
 
@@ -68,17 +65,6 @@ export const verifyAdminSession = (cookies: Cookies) => {
 
   const payload = raw.slice(0, lastDotIndex);
   const signature = raw.slice(lastDotIndex + 1);
-  const [subject, issuedAtRaw] = payload.split(':');
-  const issuedAt = Number(issuedAtRaw);
-
-  if (subject !== 'admin' || !Number.isFinite(issuedAt)) {
-    return false;
-  }
-
-  if (Date.now() - issuedAt > sessionMaxAgeSeconds * 1000) {
-    return false;
-  }
-
   const expectedSignature = signValue(payload);
   const encoder = new TextEncoder();
 
@@ -98,7 +84,7 @@ export const loginAdmin = async ({
 }: {
   email: string;
   password: string;
-}): Promise<{ ok: true } | { ok: false; message: string }> => {
+}): Promise<{ ok: true; mode: AuthMode } | { ok: false; message: string }> => {
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPassword = password.trim();
 
@@ -109,29 +95,46 @@ export const loginAdmin = async ({
     };
   }
 
-  const supabaseConfig = getSupabaseConfig();
-  const client = createClient(supabaseConfig.url, supabaseConfig.publishableKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
+  if (hasSupabaseAuth()) {
+    const client = createClient(publicEnv.PUBLIC_SUPABASE_URL!, publicEnv.PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
+
+    const { error } = await client.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: normalizedPassword
+    });
+
+    if (error) {
+      return {
+        ok: false,
+        message: error.message || '管理员登录失败。'
+      };
     }
-  });
 
-  const { error } = await client.auth.signInWithPassword({
-    email: normalizedEmail,
-    password: normalizedPassword
-  });
+    return {
+      ok: true,
+      mode: 'supabase'
+    };
+  }
 
-  const isAdminEmail = normalizedEmail === getAdminEmail().trim().toLowerCase();
+  const demoCredentials = getDemoCredentials();
 
-  if (error || !isAdminEmail) {
+  if (
+    normalizedEmail !== demoCredentials.email.toLowerCase() ||
+    normalizedPassword !== demoCredentials.password
+  ) {
     return {
       ok: false,
-      message: '邮箱或密码错误。'
+      message: '演示账号或密码不正确。'
     };
   }
 
   return {
-    ok: true
+    ok: true,
+    mode: 'demo'
   };
 };
