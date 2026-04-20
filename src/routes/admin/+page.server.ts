@@ -1,13 +1,22 @@
 import { fail, redirect } from '@sveltejs/kit';
 
 import { clearAdminSession } from '$lib/server/auth';
+import { readText } from '$lib/server/form-utils';
+import { fetchNeteasePlaylistSongs, fetchNeteaseSong } from '$lib/server/netease';
 import {
   deleteSong as removeSong,
   getAdminDashboardData,
   saveSong,
   updateRequestStatus
 } from '$lib/server/repository';
-import { requestStatusSchema, songSchema } from '$lib/validators';
+import {
+  playlistImportSettingsSchema,
+  playlistPreviewSchema,
+  playlistSongImportSchema,
+  requestDecisionSchema,
+  songPreviewSchema,
+  songSchema
+} from '$lib/validators';
 
 import type { Actions, PageServerLoad } from './$types';
 
@@ -83,6 +92,156 @@ export const actions: Actions = {
     };
   },
 
+  previewPlaylist: async ({ request }) => {
+    const formData = await request.formData();
+    const playlistInput = readText(formData.get('playlistInput'));
+    const parsed = playlistPreviewSchema.safeParse({
+      playlistInput
+    });
+
+    if (!parsed.success) {
+      return fail(400, {
+        adminError: parsed.error.issues[0]?.message ?? '导入歌单失败。',
+        playlistImport: { playlistInput }
+      });
+    }
+
+    try {
+      const playlistSongs = await fetchNeteasePlaylistSongs(parsed.data.playlistInput);
+
+      return {
+        adminMessage: `已解析 ${playlistSongs.length} 首歌曲，请勾选要导入的歌曲。`,
+        playlistPreview: {
+          playlistInput: parsed.data.playlistInput,
+          status: 'ready',
+          songs: playlistSongs.map((song) => ({
+            ...song,
+            language: '其他',
+            tagsInput: ''
+          }))
+        }
+      };
+    } catch (error) {
+      return fail(500, {
+        adminError: error instanceof Error ? error.message : '解析歌单失败。',
+        playlistImport: { playlistInput: parsed.data.playlistInput }
+      });
+    }
+  },
+
+  previewSong: async ({ request }) => {
+    const formData = await request.formData();
+    const songInput = readText(formData.get('songInput'));
+    const parsed = songPreviewSchema.safeParse({
+      songInput
+    });
+
+    if (!parsed.success) {
+      return fail(400, {
+        adminError: parsed.error.issues[0]?.message ?? '导入单曲失败。',
+        songImport: { songInput }
+      });
+    }
+
+    try {
+      const song = await fetchNeteaseSong(parsed.data.songInput);
+
+      return {
+        adminMessage: '已解析 1 首歌曲，请确认后导入。',
+        playlistPreview: {
+          playlistInput: parsed.data.songInput,
+          status: 'ready',
+          songs: [
+            {
+              ...song,
+              language: '其他',
+              tagsInput: ''
+            }
+          ]
+        }
+      };
+    } catch (error) {
+      return fail(500, {
+        adminError: error instanceof Error ? error.message : '解析单曲失败。',
+        songImport: { songInput: parsed.data.songInput }
+      });
+    }
+  },
+
+  importPlaylist: async ({ request }) => {
+    const formData = await request.formData();
+    const parsed = playlistImportSettingsSchema.safeParse({
+      status: readText(formData.get('status'))
+    });
+
+    if (!parsed.success) {
+      return fail(400, {
+        adminError: parsed.error.issues[0]?.message ?? '导入歌单失败。'
+      });
+    }
+
+    const previewSongs = readPreviewSongs(formData);
+    const selectedIndexes = new Set(formData.getAll('selectedSong').map(readText));
+    const selectedSongs = previewSongs.filter((_, index) => selectedIndexes.has(String(index)));
+    const playlistPreview = {
+      playlistInput: readText(formData.get('playlistInput')),
+      status: parsed.data.status,
+      songs: previewSongs
+    };
+
+    if (selectedSongs.length === 0) {
+      return fail(400, {
+        adminError: '请选择至少一首歌。',
+        playlistPreview
+      });
+    }
+
+    const songsToImport = [];
+
+    for (const song of selectedSongs) {
+      const parsedSong = playlistSongImportSchema.safeParse({
+        language: song.language,
+        tagsInput: song.tagsInput
+      });
+
+      if (!parsedSong.success) {
+        return fail(400, {
+          adminError: parsedSong.error.issues[0]?.message ?? '导入歌单失败。',
+          playlistPreview
+        });
+      }
+
+      songsToImport.push({
+        title: song.title,
+        artist: song.artist,
+        language: parsedSong.data.language,
+        tags: parsedSong.data.tagsInput
+      });
+    }
+
+    try {
+      const importedSongs = await importSongs(
+        songsToImport.map((song) => ({
+          title: song.title,
+          artist: song.artist,
+          language: song.language,
+          status: parsed.data.status,
+          tags: song.tags,
+          isPublic: true
+        }))
+      );
+
+      return {
+        adminMessage: `已从网易云导入 ${importedSongs.length} 首歌曲。`
+      };
+    } catch (error) {
+      return fail(500, {
+        adminError: error instanceof Error ? error.message : '导入歌单失败。',
+        playlistPreview
+      });
+    }
+  },
+
   updateRequestStatus: async ({ request }) => {
     const formData = await request.formData();
     const rawValues = {
@@ -90,7 +249,7 @@ export const actions: Actions = {
       status: readText(formData.get('status'))
     };
 
-    const parsed = requestStatusSchema.safeParse(rawValues);
+    const parsed = requestDecisionSchema.safeParse(rawValues);
 
     if (!parsed.success) {
       return fail(400, {

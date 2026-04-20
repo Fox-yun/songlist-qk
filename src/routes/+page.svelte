@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { songStatusLabels, type Song, type SongStatus } from '$lib/types';
+  import { songStatusClasses } from '$lib/status-styles';
+  import { songLanguageOptions, songStatusLabels, type Song, type SongStatus } from '$lib/types';
+
   import type { ActionData, PageData } from './$types';
 
   let { data, form }: { data: PageData; form?: ActionData } = $props();
@@ -9,256 +11,324 @@
   let selectedTag = $state('all');
   let selectedStatus = $state<'all' | SongStatus>('all');
 
+  const coverImage =
+    'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?q=80&w=1740&auto=format&fit=crop';
+
   const normalize = (value: string) => value.trim().toLowerCase();
 
-  const statusClass = (status: SongStatus) => {
-    switch (status) {
-      case 'ready': return 'ui-badge-accent';
-      case 'learning': return 'ui-badge-muted';
-      case 'resting': return 'ui-badge-soft';
-    }
-  };
-
   const matchesKeyword = (song: Song, keyword: string) => {
-    if (!keyword) return true;
+    if (!keyword) {
+      return true;
+    }
+
     return [song.title, song.artist, ...song.tags].some((value) => normalize(value).includes(keyword));
   };
 
   const filteredSongs = $derived.by(() => {
     const keyword = normalize(query);
+
     return data.catalog.songs.filter((song) => {
       const matchesLanguage = selectedLanguage === 'all' || song.language === selectedLanguage;
       const matchesTag = selectedTag === 'all' || song.tags.includes(selectedTag);
       const matchesStatus = selectedStatus === 'all' || song.status === selectedStatus;
+
       return matchesKeyword(song, keyword) && matchesLanguage && matchesTag && matchesStatus;
     });
   });
+  const learningSongs = $derived(data.catalog.songs.filter((song) => song.status === 'learning').length);
 </script>
 
-<div class="space-y-8 lg:space-y-10">
-  <section class="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_420px]">
-    <div class="relative overflow-hidden rounded-[32px] border border-[#d6ccb8] bg-[#f8f4eb] p-6 shadow-[0_36px_96px_-48px_rgba(20,20,19,0.24)] ring-1 ring-[#fff9ef]/80 backdrop-blur transition-colors duration-300 dark:rounded-3xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] dark:ring-white/5 dark:backdrop-blur-2xl lg:p-8">
-      <div class="relative flex flex-wrap items-center gap-3">
-        <span class={`ui-pill ui-pill-md font-semibold ${data.catalog.streamer.accent}`}>
-          {data.catalog.streamer.name}
-        </span>
-        <span class="ui-pill ui-pill-muted">
-          搜索范围：歌名 / 原唱 / 标签
-        </span>
-        {#if data.catalog.backendMode === 'memory'}
-          <span class="ui-pill ui-pill-accent">
-            当前使用内存演示数据
-          </span>
-        {/if}
-      </div>
+<svelte:head>
+  <title>{data.catalog.streamer.name} | 公开歌单</title>
+</svelte:head>
 
-      <div class="relative mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-end">
-        <div class="space-y-4">
-          <p class="text-sm font-medium text-[#c96442] transition-colors duration-300 dark:text-[#38BDF8]">{data.catalog.streamer.tagline}</p>
-          <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-[#141413] transition-colors duration-300 dark:text-white lg:text-5xl">
-            主播会唱什么，一眼就找到
+<div class="space-y-8 lg:space-y-10">
+  <section class="overflow-hidden rounded-[32px] border border-[#e6e6e6] bg-white shadow-sm">
+    <div class="relative min-h-[380px]">
+      <img
+        src={coverImage}
+        alt="舞台麦克风和灯光"
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+      <div class="theme-hero-overlay absolute inset-0"></div>
+
+      <div class="relative flex min-h-[380px] flex-col justify-between gap-8 p-6 lg:p-10">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class={`inline-flex rounded-full px-4 py-1 text-sm font-semibold text-white ${data.catalog.streamer.accent}`}>
+            {data.catalog.streamer.name}
+          </span>
+        </div>
+
+        <div class="max-w-4xl space-y-4">
+          <h1 class="text-3xl font-semibold tracking-tight text-[#191a1b] lg:text-5xl">
+            {data.catalog.streamer.tagline}
           </h1>
-          <p class="max-w-3xl text-sm leading-7 text-[#5e5d59] transition-colors duration-300 dark:text-slate-400 lg:text-base">
+          <p class="max-w-2xl text-sm leading-7 text-[#62666d] lg:text-base">
             {data.catalog.streamer.description}
           </p>
         </div>
 
-        <div class="rounded-[28px] border border-[#d9ceb9] bg-[#efe4d2] p-5 shadow-[inset_0_1px_0_rgba(255,249,239,0.75)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-inner">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#87867f] transition-colors duration-300 dark:text-slate-500">体验重点</p>
-          <div class="mt-4 space-y-3 text-sm text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
-            <div class="rounded-2xl border border-[#e3d8c6] bg-[#fbf8f1] px-4 py-3 shadow-[0_10px_24px_-22px_rgba(20,20,19,0.4)] transition-colors duration-300 dark:rounded-xl dark:border-white/5 dark:bg-white/[0.02] dark:shadow-none">桌面端优先的浏览效率</div>
-            <div class="rounded-2xl border border-[#e3d8c6] bg-[#fbf8f1] px-4 py-3 shadow-[0_10px_24px_-22px_rgba(20,20,19,0.4)] transition-colors duration-300 dark:rounded-xl dark:border-white/5 dark:bg-white/[0.02] dark:shadow-none">公开愿望单提交无门槛</div>
-            <div class="rounded-2xl border border-[#e3d8c6] bg-[#fbf8f1] px-4 py-3 shadow-[0_10px_24px_-22px_rgba(20,20,19,0.4)] transition-colors duration-300 dark:rounded-xl dark:border-white/5 dark:bg-white/[0.02] dark:shadow-none">后台支持直接对接真实库</div>
+        <div class="grid gap-6 border-t border-[#e6e6e6] pt-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.55fr)] lg:items-end">
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-[24px] border border-[#e6e6e6] bg-white/90 p-4 shadow-sm backdrop-blur">
+              <p class="text-xs font-medium uppercase tracking-[0.14em] text-[#8a8f98]">公开曲目</p>
+              <p class="mt-2 text-3xl font-semibold text-[#191a1b]">{data.catalog.stats.publicSongs}</p>
+              <p class="mt-1 text-xs text-[#62666d]">首可浏览歌曲</p>
+            </div>
+
+            <div class="rounded-[24px] border border-[#e6e6e6] bg-white/90 p-4 shadow-sm backdrop-blur">
+              <p class="text-xs font-medium uppercase tracking-[0.14em] text-[#8a8f98]">学习中曲目</p>
+              <p class="mt-2 text-3xl font-semibold text-[#191a1b]">{learningSongs}</p>
+              <p class="mt-1 text-xs text-[#62666d]">首正在练习</p>
+            </div>
+
+            <div class="rounded-[24px] border border-[#e6e6e6] bg-white/90 p-4 shadow-sm backdrop-blur">
+              <p class="text-xs font-medium uppercase tracking-[0.14em] text-[#8a8f98]">标签总览</p>
+              <p class="mt-2 text-3xl font-semibold text-[#191a1b]">{data.catalog.tags.length}</p>
+              <p class="mt-1 text-xs text-[#62666d]">个筛选标签</p>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {#each data.catalog.streamer.platforms as platform}
+              <a
+                href={platform.href}
+                target="_blank"
+                rel="noreferrer"
+                class="button button-neutral button-full"
+              >
+                前往 {platform.label}
+              </a>
+            {/each}
           </div>
         </div>
       </div>
-
-      <div class="relative mt-8 grid gap-4 sm:grid-cols-3">
-        <div class="rounded-[28px] border border-[#ddd3c0] bg-[#f3ebde] p-5 shadow-[0_12px_28px_-24px_rgba(20,20,19,0.36)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-none">
-          <p class="text-xs uppercase tracking-[0.18em] text-[#87867f] transition-colors duration-300 dark:text-slate-500">公开曲目</p>
-          <p class="mt-3 text-3xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">{data.catalog.stats.publicSongs}</p>
-        </div>
-        <div class="rounded-[28px] border border-[#ddd3c0] bg-[#fbf8f1] p-5 shadow-[0_12px_28px_-24px_rgba(20,20,19,0.36)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-none">
-          <p class="text-xs uppercase tracking-[0.18em] text-[#87867f] transition-colors duration-300 dark:text-slate-500">待处理愿望</p>
-          <p class="mt-3 text-3xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">{data.catalog.stats.pendingRequests}</p>
-        </div>
-        <div class="rounded-[28px] border border-[#ddd3c0] bg-[#efe4d2] p-5 shadow-[0_12px_28px_-24px_rgba(20,20,19,0.36)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-none">
-          <p class="text-xs uppercase tracking-[0.18em] text-[#87867f] transition-colors duration-300 dark:text-slate-500">标签总览</p>
-          <p class="mt-3 text-3xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">{data.catalog.tags.length}</p>
-        </div>
-      </div>
-
-      <div class="relative mt-8 grid gap-3 sm:grid-cols-3">
-        {#each data.catalog.streamer.platforms as platform}
-          <a href={platform.href} target="_blank" rel="noreferrer" class="ui-btn-secondary ui-btn-secondary-soft">
-            进入 {platform.label}
-          </a>
-        {/each}
-      </div>
-    </div>
-
-    <div class="rounded-[32px] border border-[#d7cdb9] bg-[#fbf8f1] p-6 shadow-[0_36px_96px_-48px_rgba(20,20,19,0.24)] ring-1 ring-[#fff9ef]/80 backdrop-blur transition-colors duration-300 dark:rounded-3xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] dark:ring-white/5 dark:backdrop-blur-2xl lg:p-7">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-sm font-medium text-[#c96442] transition-colors duration-300 dark:text-[#38BDF8]">愿望单提交</p>
-          <h2 class="mt-1 text-2xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">让主播知道你想听什么</h2>
-        </div>
-      </div>
-
-      {#if form?.requestMessage}
-        <div class="mt-5 rounded-2xl border border-[#d7cdb9] bg-[#f4eddf] px-4 py-3 text-sm text-[#3d3d3a] transition-colors duration-300 dark:rounded-xl dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-          {form.requestMessage}
-        </div>
-      {/if}
-
-      {#if form?.requestError}
-        <div class="mt-5 rounded-2xl border border-[#b53333] bg-[#f8ebe6] px-4 py-3 text-sm text-[#b53333] transition-colors duration-300 dark:rounded-xl dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400">
-          {form.requestError}
-        </div>
-      {/if}
-
-      <form method="POST" class="mt-5 space-y-4 rounded-[28px] border border-[#e4dac8] bg-[#f2e9dc] p-4 shadow-[inset_0_1px_0_rgba(255,249,239,0.75)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-none sm:p-5">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
-            <span>歌曲名</span>
-            <input
-              name="songTitle"
-              value={form?.requestValues?.songTitle ?? ''}
-              class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all placeholder:text-[#87867f] focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:placeholder:text-slate-600 dark:focus:border-[#38BDF8] dark:focus:bg-black/60 dark:focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-              placeholder="例如：群青"
-            />
-          </label>
-
-          <label class="space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
-            <span>原唱</span>
-            <input
-              name="artist"
-              value={form?.requestValues?.artist ?? ''}
-              class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all placeholder:text-[#87867f] focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:placeholder:text-slate-600 dark:focus:border-[#38BDF8] dark:focus:bg-black/60 dark:focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-              placeholder="例如：YOASOBI"
-            />
-          </label>
-        </div>
-
-        <label class="space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
-          <span>留言</span>
-          <textarea name="message" rows="4" class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all placeholder:text-[#87867f] focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:placeholder:text-slate-600 dark:focus:border-[#38BDF8] dark:focus:bg-black/60 dark:focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]" placeholder="可以说说为什么想听。">{form?.requestValues?.message ?? ''}</textarea>
-        </label>
-
-        <label class="space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
-          <span>你的昵称（可选）</span>
-          <input
-            name="requesterName"
-            value={form?.requestValues?.requesterName ?? ''}
-            class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all placeholder:text-[#87867f] focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:placeholder:text-slate-600 dark:focus:border-[#38BDF8] dark:focus:bg-black/60 dark:focus:shadow-[0_0_15px_rgba(56,189,248,0.15)]"
-            placeholder="例如：夜猫子"
-          />
-        </label>
-
-        <button
-          type="submit"
-          class="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-[#c96442] px-5 py-3.5 text-sm font-semibold text-[#faf9f5] shadow-[0_12px_28px_-18px_rgba(201,100,66,0.82)] ring-1 ring-[#a95437]/35 transition-all hover:bg-[#d97757] dark:rounded-xl dark:bg-white dark:text-slate-900 dark:shadow-md dark:ring-transparent dark:hover:-translate-y-[1px] dark:hover:bg-slate-200"
-        >
-          提交愿望单
-        </button>
-      </form>
     </div>
   </section>
 
-  <section class="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-    <aside class="h-fit rounded-[32px] border border-[#d6ccb8] bg-[#f3ebde] p-5 shadow-[0_30px_84px_-46px_rgba(20,20,19,0.22)] ring-1 ring-[#fff9ef]/75 backdrop-blur transition-colors duration-300 dark:rounded-3xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] dark:ring-white/5 dark:backdrop-blur-2xl lg:sticky lg:top-24 lg:p-6">
+  <section class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+    <aside class="h-fit rounded-[30px] border border-[#e6e6e6] bg-white p-5 shadow-sm lg:sticky lg:top-24">
       <div class="flex items-center justify-between gap-3">
         <div>
-          <p class="text-sm font-medium text-[#c96442] transition-colors duration-300 dark:text-[#38BDF8]">公开歌单</p>
-          <h2 class="mt-1 text-2xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">搜索与筛选</h2>
+          <p class="text-sm font-medium text-[#5e6ad2]">公开歌单</p>
+          <h2 class="mt-1 text-2xl font-semibold text-[#191a1b]">搜索与筛选</h2>
         </div>
+        <span class="rounded-full border border-[#e6e6e6] bg-[#f5f6f7] px-3 py-1 text-xs text-[#62666d]">
+          {filteredSongs.length} / {data.catalog.songs.length}
+        </span>
       </div>
 
-      <div class="mt-5 space-y-4 rounded-[28px] border border-[#ddd2bf] bg-[#efe4d2] p-4 shadow-[inset_0_1px_0_rgba(255,249,239,0.75)] transition-colors duration-300 dark:rounded-2xl dark:border-white/5 dark:bg-black/20 dark:shadow-none">
-        <label class="block space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
+      <div class="mt-5 space-y-4">
+        <label class="block space-y-2 text-sm text-[#62666d]">
           <span>搜索</span>
           <input
             bind:value={query}
-            class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all placeholder:text-[#87867f] focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:placeholder:text-slate-600 dark:focus:border-[#38BDF8] dark:focus:bg-black/60"
-            placeholder="按歌名搜索"
+            class="form-field"
+            placeholder="按歌名、原唱、标签搜索"
           />
         </label>
-        
-        <label class="block space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
+
+        <label class="block space-y-2 text-sm text-[#62666d]">
           <span>语言</span>
-          <select bind:value={selectedLanguage} class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:focus:border-[#38BDF8] dark:focus:bg-black/60">
-            <option value="all">全部</option>
-            {#each data.catalog.languages as language}<option value={language}>{language}</option>{/each}
+          <select bind:value={selectedLanguage} class="form-field">
+            <option value="all">全部语言</option>
+            {#each data.catalog.languages as language}
+              <option value={language}>{language}</option>
+            {/each}
           </select>
         </label>
 
-        <label class="block space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
+        <label class="block space-y-2 text-sm text-[#62666d]">
           <span>标签</span>
-          <select bind:value={selectedTag} class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:focus:border-[#38BDF8] dark:focus:bg-black/60">
-            <option value="all">全部</option>
-            {#each data.catalog.tags as tag}<option value={tag}>{tag}</option>{/each}
+          <select bind:value={selectedTag} class="form-field">
+            <option value="all">全部标签</option>
+            {#each data.catalog.tags as tag}
+              <option value={tag}>{tag}</option>
+            {/each}
           </select>
         </label>
 
-        <label class="block space-y-2 text-sm font-medium text-[#4d4c48] transition-colors duration-300 dark:text-slate-300">
+        <label class="block space-y-2 text-sm text-[#62666d]">
           <span>当前状态</span>
-          <select bind:value={selectedStatus} class="w-full rounded-2xl border border-[#d6ccb9] bg-[#fffdf8] px-4 py-3 text-[#141413] shadow-[0_10px_20px_-20px_rgba(20,20,19,0.6)] outline-none transition-all focus:border-[#3898ec] focus:bg-[#ffffff] dark:rounded-xl dark:border-white/10 dark:bg-black/40 dark:text-white dark:shadow-none dark:focus:border-[#38BDF8] dark:focus:bg-black/60">
-            <option value="all">全部</option>
-            {#each data.catalog.statuses as status}<option value={status}>{songStatusLabels[status]}</option>{/each}
+          <select bind:value={selectedStatus} class="form-field">
+            <option value="all">全部状态</option>
+            {#each data.catalog.statuses as status}
+              <option value={status}>{songStatusLabels[status]}</option>
+            {/each}
           </select>
         </label>
       </div>
     </aside>
 
-    <div class="space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 rounded-[28px] border border-[#d6ccb8] bg-[#f6f1e6] px-5 py-4 shadow-[0_30px_84px_-46px_rgba(20,20,19,0.22)] ring-1 ring-[#fff9ef]/75 backdrop-blur transition-colors duration-300 dark:rounded-2xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-none dark:ring-transparent dark:backdrop-blur-2xl">
-        <div>
-          <p class="text-sm font-medium text-[#c96442] transition-colors duration-300 dark:text-[#38BDF8]">结果列表</p>
-          <h3 class="mt-1 text-xl font-semibold text-[#141413] transition-colors duration-300 dark:text-white">按桌面端优先的信息密度展示</h3>
-        </div>
-        <div class="ui-pill ui-pill-md ui-pill-muted">
-          命中 {filteredSongs.length} 首
-        </div>
+    <div class="overflow-hidden rounded-[28px] border border-[#e6e6e6] bg-white shadow-sm">
+      <div class="hidden grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 border-b border-[#e6e6e6] bg-[#f5f6f7] px-6 py-4 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a8f98] lg:grid">
+        <div>歌曲名</div>
+        <div>原唱</div>
+        <div>语言</div>
+        <div>当前状态</div>
+        <div>标签</div>
       </div>
 
-      <div class="hidden overflow-hidden rounded-[32px] border border-[#d6ccb8] bg-[#fbf8f1] shadow-[0_30px_84px_-46px_rgba(20,20,19,0.22)] ring-1 ring-[#fff9ef]/75 transition-colors duration-300 dark:rounded-3xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] dark:ring-transparent dark:backdrop-blur-2xl lg:block">
-        <div class="grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 border-b border-[#ddd2bf] bg-[#f3ebde] px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#7d7a72] transition-colors duration-300 dark:border-white/5 dark:bg-black/40 dark:text-slate-500">
-          <div>歌曲名</div><div>原唱</div><div>语言</div><div>当前状态</div><div>标签</div>
-        </div>
-
-        {#if filteredSongs.length > 0}
-          {#each filteredSongs as song, index}
-            <div class={`grid grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] gap-4 px-6 py-5 transition-colors dark:hover:bg-white/5 ${index !== filteredSongs.length - 1 ? 'border-b border-[#ebe2d4] dark:border-white/5' : ''} ${index % 2 === 0 ? 'bg-[#fbf8f1] dark:bg-transparent' : 'bg-[#f7f1e6] dark:bg-black/20'}`}>
-              <div><p class="text-base font-semibold text-[#141413] transition-colors duration-300 dark:text-white">{song.title}</p></div>
-              <div class="text-sm text-[#4d4c48] transition-colors duration-300 dark:text-slate-400">{song.artist}</div>
-              <div class="text-sm text-[#87867f] transition-colors duration-300 dark:text-slate-500">{song.language}</div>
-              <div><span class={`ui-badge ${statusClass(song.status)}`}>{songStatusLabels[song.status]}</span></div>
-              <div class="flex flex-wrap gap-2">
-                {#each song.tags as tag}<span class="ui-pill ui-pill-muted">{tag}</span>{/each}
-              </div>
-            </div>
-          {/each}
-        {:else}
-          <div class="px-6 py-16 text-center text-sm text-[#87867f] dark:text-slate-500">未找到歌曲。</div>
-        {/if}
-      </div>
-
-      <div class="grid gap-4 lg:hidden">
-        {#if filteredSongs.length > 0}
+      {#if filteredSongs.length > 0}
+        <div class="divide-y divide-[#e6e6e6]">
           {#each filteredSongs as song}
-            <article class="rounded-[28px] border border-[#d6ccb8] bg-[#fbf8f1] p-5 shadow-[0_24px_64px_-38px_rgba(20,20,19,0.22)] ring-1 ring-[#fff9ef]/75 transition-colors duration-300 dark:rounded-2xl dark:border-white/10 dark:bg-[#11151D]/60 dark:shadow-none dark:ring-transparent dark:backdrop-blur-2xl">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <h3 class="text-lg font-semibold text-[#141413] transition-colors duration-300 dark:text-white">{song.title}</h3>
-                  <p class="mt-1 text-sm text-[#5e5d59] transition-colors duration-300 dark:text-slate-400">{song.artist}</p>
+            <article class="grid gap-4 p-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)_120px_140px_1.7fr] lg:items-center lg:px-6">
+              <div class="min-w-0">
+                <p class="text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">歌曲名</p>
+                <h3 class="mt-1 break-words text-lg font-semibold text-[#191a1b] lg:mt-0 lg:text-base">{song.title}</h3>
+              </div>
+
+              <div class="min-w-0 text-sm text-[#62666d]">
+                <p class="text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">原唱</p>
+                <p class="mt-1 truncate lg:mt-0">{song.artist}</p>
+              </div>
+
+              <div class="text-sm text-[#62666d]">
+                <p class="text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">语言</p>
+                <p class="mt-1 lg:mt-0">{song.language}</p>
+              </div>
+
+              <div>
+                <p class="mb-2 text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">当前状态</p>
+                <span class={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${songStatusClasses[song.status]}`}>
+                  {songStatusLabels[song.status]}
+                </span>
+              </div>
+
+              <div>
+                <p class="mb-2 text-xs uppercase tracking-[0.14em] text-[#8a8f98] lg:hidden">标签</p>
+                <div class="flex flex-wrap gap-2">
+                  {#each song.tags as tag}
+                    <span class="rounded-full border border-[#d0d6e0] bg-[#f5f6f7] px-3 py-1 text-xs text-[#62666d]">
+                      {tag}
+                    </span>
+                  {/each}
                 </div>
-                <span class={`ui-badge ${statusClass(song.status)}`}>{songStatusLabels[song.status]}</span>
               </div>
             </article>
           {/each}
-        {:else}
-           <div class="rounded-[28px] border border-dashed border-[#d6ccb8] bg-[#f6f0e4] px-4 py-12 text-center text-sm text-[#87867f] transition-colors duration-300 dark:rounded-2xl dark:border-white/10 dark:bg-black/20 dark:text-slate-500 dark:backdrop-blur-xl">没有相关歌曲。</div>
+        </div>
+      {:else}
+        <div class="px-6 py-16 text-center text-sm text-[#8a8f98]">
+          当前筛选下没有结果，试试放宽关键词或筛选项。
+        </div>
+      {/if}
+    </div>
+  </section>
+
+  <section class="rounded-[30px] border border-[#e6e6e6] bg-white p-6 shadow-sm lg:p-7">
+    <div class="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
+      <div>
+        <span class="w-fit rounded-full border border-[#d0d6e0] bg-[#f5f6f7] px-3 py-1 text-xs font-medium text-[#62666d]">
+          无需登录
+        </span>
+        <p class="mt-5 text-sm font-medium text-[#5e6ad2]">愿望单提交</p>
+        <h2 class="mt-2 text-2xl font-semibold leading-tight text-[#191a1b]">想听哪首歌？</h2>
+        <p class="mt-3 text-sm leading-6 text-[#62666d]">
+          优先粘贴网易云单曲链接或 ID 解析，系统会自动填好歌名和原唱；找不到链接时再手动填写。
+        </p>
+      </div>
+
+      <div>
+        {#if form?.requestMessage || form?.requestError}
+          <div class="mb-5 space-y-3">
+            {#if form?.requestMessage}
+              <div class="rounded-[20px] border border-[#10b981]/30 bg-[#10b981]/10 px-4 py-3 text-sm text-[#27a644]">
+                {form.requestMessage}
+              </div>
+            {/if}
+
+            {#if form?.requestError}
+              <div class="rounded-[20px] border border-[#7170ff]/30 bg-[#7170ff]/10 px-4 py-3 text-sm text-[#5e6ad2]">
+                {form.requestError}
+              </div>
+            {/if}
+          </div>
         {/if}
+
+        <form method="POST" action="?/submitRequest" class="grid gap-4">
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
+            <label class="block space-y-2 text-sm text-[#62666d]">
+              <span>网易云单曲链接或 ID</span>
+              <input
+                name="songInput"
+                value={form?.requestValues?.songInput ?? ''}
+                class="form-field"
+                placeholder="https://music.163.com/#/song?id=..."
+              />
+            </label>
+
+            <button
+              type="submit"
+              formaction="?/parseRequestSong"
+              class="button button-secondary button-full"
+            >
+              解析单曲
+            </button>
+          </div>
+
+          <div class="grid gap-4 lg:grid-cols-3">
+            <label class="block space-y-2 text-sm text-[#62666d]">
+              <span>歌曲名</span>
+              <input
+                name="songTitle"
+                value={form?.requestValues?.songTitle ?? ''}
+                class="form-field"
+                placeholder="例如：群青"
+              />
+            </label>
+
+            <label class="block space-y-2 text-sm text-[#62666d]">
+              <span>原唱</span>
+              <input
+                name="artist"
+                value={form?.requestValues?.artist ?? ''}
+                class="form-field"
+                placeholder="例如：YOASOBI"
+              />
+            </label>
+
+            <label class="block space-y-2 text-sm text-[#62666d]">
+              <span>语言</span>
+              <select name="language" class="form-field" required>
+                {#each songLanguageOptions as language}
+                  <option value={language} selected={(form?.requestValues?.language ?? '其他') === language}>
+                    {language}
+                  </option>
+                {/each}
+              </select>
+            </label>
+
+            <label class="block space-y-2 text-sm text-[#62666d] lg:col-span-3">
+              <span>留言</span>
+              <textarea
+                name="message"
+                rows="3"
+                class="form-field"
+                placeholder="可以说说为什么想听、适合什么场合唱。"
+              >{form?.requestValues?.message ?? ''}</textarea>
+            </label>
+
+            <label class="block space-y-2 text-sm text-[#62666d] lg:col-span-2">
+              <span>你的昵称（可选）</span>
+              <input
+                name="requesterName"
+                value={form?.requestValues?.requesterName ?? ''}
+                class="form-field"
+                placeholder="例如：夜猫子"
+              />
+            </label>
+
+            <div class="flex items-end">
+              <button
+                type="submit"
+                class="button button-primary button-full"
+              >
+                提交愿望单
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   </section>
