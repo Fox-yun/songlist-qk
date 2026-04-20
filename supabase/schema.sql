@@ -23,7 +23,7 @@ create table if not exists public.requests (
   artist text not null default '',
   message text not null,
   requester_name text,
-  status text not null default 'pending' check (status in ('pending', 'reviewing', 'planned', 'declined')),
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'refused')),
   matched_song_id uuid references public.songs (id) on delete set null,
   created_at timestamptz not null default now()
 );

@@ -35,6 +35,7 @@
       return matchesKeyword(song, keyword) && matchesLanguage && matchesTag && matchesStatus;
     });
   });
+  const learningSongs = $derived(data.catalog.songs.filter((song) => song.status === 'learning').length);
 </script>
 
 <svelte:head>
@@ -76,9 +77,9 @@
             </div>
 
             <div class="rounded-[24px] border border-[#e6e6e6] bg-white/90 p-4 shadow-sm backdrop-blur">
-              <p class="text-xs font-medium uppercase tracking-[0.14em] text-[#8a8f98]">待处理曲目</p>
-              <p class="mt-2 text-3xl font-semibold text-[#191a1b]">{data.catalog.stats.pendingRequests}</p>
-              <p class="mt-1 text-xs text-[#62666d]">条愿望单请求</p>
+              <p class="text-xs font-medium uppercase tracking-[0.14em] text-[#8a8f98]">学习中曲目</p>
+              <p class="mt-2 text-3xl font-semibold text-[#191a1b]">{learningSongs}</p>
+              <p class="mt-1 text-xs text-[#62666d]">首正在练习</p>
             </div>
 
             <div class="rounded-[24px] border border-[#e6e6e6] bg-white/90 p-4 shadow-sm backdrop-blur">

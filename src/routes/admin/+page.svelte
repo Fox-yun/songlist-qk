@@ -2,8 +2,8 @@
   import { songStatusClasses } from '$lib/status-styles';
   import {
     defaultSongLanguage,
+    requestDecisionOptions,
     requestStatusLabels,
-    requestStatusOptions,
     songLanguageOptions,
     songStatusLabels,
     songStatusOptions,
@@ -36,11 +36,9 @@
     switch (status) {
       case 'pending':
         return 'border-[#5e6ad2]/30 bg-[#5e6ad2]/10 text-[#5e6ad2]';
-      case 'reviewing':
-        return 'border-[#7a7fad]/35 bg-[#7a7fad]/15 text-[#7a7fad]';
-      case 'planned':
+      case 'accepted':
         return 'border-[#10b981]/30 bg-[#10b981]/10 text-[#27a644]';
-      case 'declined':
+      case 'refused':
         return 'border-[#d0d6e0] bg-[#f3f4f5] text-[#62666d]';
     }
   };
@@ -358,20 +356,22 @@
                   </div>
                 </div>
 
-                <form method="POST" action="?/updateRequestStatus" class="flex w-full shrink-0 gap-3 lg:w-auto lg:min-w-[260px] lg:flex-col">
-                  <input type="hidden" name="id" value={item.id} />
-                  <select name="status" class="form-field-muted">
-                    {#each requestStatusOptions as status}
-                      <option value={status} selected={item.status === status}>{requestStatusLabels[status]}</option>
-                    {/each}
-                  </select>
-                  <button
-                    type="submit"
-                    class="button button-primary"
-                  >
-                    更新状态
-                  </button>
-                </form>
+                {#if item.status === 'pending'}
+                  <form method="POST" action="?/updateRequestStatus" class="flex w-full shrink-0 gap-3 lg:w-auto lg:min-w-[260px] lg:flex-col">
+                    <input type="hidden" name="id" value={item.id} />
+                    <select name="status" class="form-field-muted">
+                      {#each requestDecisionOptions as status}
+                        <option value={status}>{requestStatusLabels[status]}</option>
+                      {/each}
+                    </select>
+                    <button
+                      type="submit"
+                      class="button button-primary"
+                    >
+                      处理愿望
+                    </button>
+                  </form>
+                {/if}
               </div>
             </article>
           {/each}

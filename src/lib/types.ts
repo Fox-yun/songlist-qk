@@ -5,8 +5,10 @@ export const songLanguageOptions = ['未指定', '中文', '英语', '日语', '
 export type SongLanguage = (typeof songLanguageOptions)[number];
 export const defaultSongLanguage: SongLanguage = '未指定';
 
-export const requestStatusOptions = ['pending', 'reviewing', 'planned', 'declined'] as const;
+export const requestStatusOptions = ['pending', 'accepted', 'refused'] as const;
 export type RequestStatus = (typeof requestStatusOptions)[number];
+export const requestDecisionOptions = ['accepted', 'refused'] as const satisfies readonly RequestStatus[];
+export type RequestDecision = (typeof requestDecisionOptions)[number];
 
 export interface Song {
   id: string;
@@ -69,8 +71,7 @@ export const songStatusLabels: Record<SongStatus, string> = {
 };
 
 export const requestStatusLabels: Record<RequestStatus, string> = {
-  pending: '待处理',
-  reviewing: '评估中',
-  planned: '已加入计划',
-  declined: '暂不考虑'
+  pending: 'Pending',
+  accepted: 'Accepted',
+  refused: 'Refused'
 };

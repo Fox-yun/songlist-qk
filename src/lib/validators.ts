@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { requestStatusOptions, songLanguageOptions, songStatusOptions } from '$lib/types';
+import { requestDecisionOptions, songLanguageOptions, songStatusOptions } from '$lib/types';
 
 const csvToTags = (value: string) =>
   value
@@ -51,9 +51,9 @@ export const songPreviewSchema = z.object({
   songInput: z.string().trim().min(1, '请填写网易云单曲链接或 ID。').max(240, '单曲链接过长。')
 });
 
-export const requestStatusSchema = z.object({
+export const requestDecisionSchema = z.object({
   id: z.string().trim().min(1, '请求 ID 缺失。'),
-  status: z.enum(requestStatusOptions, {
-    errorMap: () => ({ message: '请选择有效的请求状态。' })
+  status: z.enum(requestDecisionOptions, {
+    errorMap: () => ({ message: '请选择 Accept 或 Refuse。' })
   })
 });

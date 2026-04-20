@@ -4,11 +4,13 @@ import { streamerProfile } from '$lib/config';
 import { getSupabaseConfig } from '$lib/server/env';
 import {
   type CatalogStats,
+  defaultSongLanguage,
   requestStatusOptions,
   songLanguageOptions,
   songStatusOptions,
   type AdminDashboardData,
   type PublicCatalog,
+  type RequestDecision,
   type RequestStatus,
   type Song,
   type SongLanguage,
@@ -140,24 +142,8 @@ const listRequests = async (): Promise<SongRequest[]> => {
   return ((data as RequestRow[] | null) ?? []).map(mapRequestRow);
 };
 
-const getPendingRequestCount = async (): Promise<number> => {
-  const supabase = getSupabaseAdmin();
-
-  const { count, error } = await supabase
-    .from('requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending');
-
-  if (error) {
-    throw error;
-  }
-
-  return count ?? 0;
-};
-
 export const getPublicCatalog = async (): Promise<PublicCatalog> => {
   const songs = (await listSongs()).filter((song) => song.isPublic);
-  const pendingRequests = await getPendingRequestCount();
   const metadata = buildCatalogMetadata(songs);
 
   return {
@@ -166,7 +152,7 @@ export const getPublicCatalog = async (): Promise<PublicCatalog> => {
     tags: metadata.tags,
     languages: metadata.languages,
     statuses: songStatusOptions,
-    stats: buildStats(songs, pendingRequests)
+    stats: buildStats(songs, 0)
   };
 };
 
@@ -340,9 +326,43 @@ export const updateRequestStatus = async ({
   status
 }: {
   id: string;
-  status: RequestStatus;
+  status: RequestDecision;
 }) => {
   const supabase = getSupabaseAdmin();
+  const { data: requestRow, error: requestError } = await supabase
+    .from('requests')
+    .select('id, song_title, artist, message, requester_name, status, matched_song_id, created_at')
+    .eq('id', id)
+    .single();
+
+  if (requestError) {
+    throw requestError;
+  }
+
+  const request = mapRequestRow(requestRow as RequestRow);
+
+  if (request.status !== 'pending') {
+    throw new Error('这个愿望已经处理过。');
+  }
+
+  if (status === 'accepted') {
+    const song = await saveSong({
+      title: request.songTitle,
+      artist: request.artist,
+      language: defaultSongLanguage,
+      status: 'learning',
+      tags: [],
+      isPublic: true
+    });
+
+    const { error } = await supabase.from('requests').update({ status, matched_song_id: song.id }).eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    return;
+  }
 
   const { error } = await supabase.from('requests').update({ status }).eq('id', id);
 

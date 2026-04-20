@@ -16,7 +16,7 @@ import {
   playlistImportSettingsSchema,
   playlistPreviewSchema,
   playlistSongImportSchema,
-  requestStatusSchema,
+  requestDecisionSchema,
   songPreviewSchema,
   songSchema
 } from '$lib/validators';
@@ -266,7 +266,7 @@ export const actions: Actions = {
       status: readText(formData.get('status'))
     };
 
-    const parsed = requestStatusSchema.safeParse(rawValues);
+    const parsed = requestDecisionSchema.safeParse(rawValues);
 
     if (!parsed.success) {
       return fail(400, {
